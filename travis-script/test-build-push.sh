@@ -8,7 +8,7 @@ function _do()
 }
 
 build_image(){
-    _do echo "${DOCKER_PASSWORD}" | _do docker login "${ACR_REPO}" -u="${DOCKER_USERNAME}" --password-stdin	
+    _do echo "${DOCKER_PASSWORD}" | _do docker login -u="${DOCKER_USERNAME}" --password-stdin	
     _do cd ${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
     _do docker build -t "${DOCKER_IMAGE_NAME}" .
     _do cd $TRAVIS_BUILD_DIR    
