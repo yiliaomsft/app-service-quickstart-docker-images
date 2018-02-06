@@ -255,14 +255,15 @@ fi
 show_docker_list
 echo "========================================"
 echo "========================================" >> result.log
-echo "INFORMATION - Start to Verify Docker files:"
-echo "INFORMATION - Start to Verify Docker files:" >> result.log
 # Verify Docker files.
 docker_count=1
 while [ $docker_count -le $dockers ]
 do     
 	docker_folder=${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
+    echo "========================================"
+    echo "========================================" >> result.log
 	echo "PATH: "$docker_folder	
+    echo "PATH: "$docker_folder	>> result.log
 	#Is this commit remove a Image/Version? If yes, we can skip this step.
     if test ! -d $docker_folder; then
         echo "INFORMATION: This commit Remove "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}" !"
@@ -277,44 +278,41 @@ do
             echo "ERROR - PATH: "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
             exit -1
         fi
+        echo ""
+        echo ""
+        echo "========================================"
+        echo "INFORMATION - Start to Build......"${docker_image_name["${docker_count}"]}":"${docker_image_version["${docker_count}"]}
+        echo "========================================" >> result.log
+        echo "INFORMATION - Start to Build......"${docker_image_name["${docker_count}"]}":"${docker_image_version["${docker_count}"]} >> result.log >> result.log
+        ./travis-script/test-build.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
+        test_result=$?		
+		if ((test_result!=0)); then
+			echo "ERROR - Build failed, Please double check......"            
+			exit -1
+		fi
+        echo "========================================"
+        echo "INFORMATION - Start to Verify Docker files:"
+        echo "========================================" >> result.log
+        echo "INFORMATION - Start to Verify Docker files:" >> result.log
         ./travis-script/test-dockerfile.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
 		test_result=$?		
 		if [ $test_result -ne 0 ]; then
-			echo "ERROR - Please double check......"
+			echo "ERROR - Verify failed, Please double check......"
+			exit -1
+		fi        
+        echo "========================================"
+        echo "INFORMATION - Start to PUSH/PULL/RUN:"
+        echo "========================================" >> result.log
+        echo "INFORMATION - Start to PUSH/PULL/RUN:" >> result.log
+        ./travis-script/test-push-pull-run.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
+        test_result=$?		
+		if ((test_result!=0)); then
+			echo "ERROR - PUSH/PULL/RUN failed, Please double check......"            
 			exit -1
 		fi
     fi
     let docker_count+=1
 done
-echo ""
-echo ""
-echo "========================================"
-echo "INFORMATION - Start to Build/PUSH:"
-echo "========================================" >> result.log
-echo "INFORMATION - Start to Build/PUSH:" >> result.log
-# Verify Docker files.
-docker_count=1
-while test $[docker_count] -le $[dockers]
-do
-    docker_folder=${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
-	echo "folder: "$docker_folder    
-    #Is this commit remove a Image/Version? If yes, we can skip this step.
-    if test ! -d $docker_folder; then
-        echo "INFORMATION: This commit Remove "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}" !"
-        echo "INFORMATION: This commit Remove "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}" !" >> result.log
-        echo "INFORMATION: SKIP this stage"
-        echo "INFORMATION: SKIP this stage" >> result.log
-    else      
-        #It's not necessay to verify folder here, if anything wrong, the process should has been broken in last stage.
-        ./travis-script/test-build-push.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
-		test_result=$?		
-		if ((test_result!=0)); then
-			echo "ERROR - Please double check......"            
-			exit -1
-		fi
-    fi
-    let docker_count+=1
-done     
 
 # Everything is OK, return 0
 echo "========================================"

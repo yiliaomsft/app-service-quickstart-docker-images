@@ -7,23 +7,6 @@ function _do()
         "$@" || { echo "exec failed: ""$@"; exit -1; }
 }
 
-build_image(){
-    _do echo "${DOCKER_PASSWORD}" | _do docker login -u="${DOCKER_USERNAME}" --password-stdin	
-    _do cd ${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
-    _do docker build -t "${DOCKER_IMAGE_NAME}" .
-    _do cd $TRAVIS_BUILD_DIR    
-    testBuildImage=$(docker images | grep "${DOCKER_IMAGE_NAME}")
-    if [ -z "${testBuildImage}" ]; then 
-        echo "FAILED - Build fail!!!"
-        exit 1
-    else
-        echo "${testBuildImage}"
-        echo "${testBuildImage}" >> result.log        
-        echo "PASSED - Build Successfully!!!."
-        echo "PASSED - Build Successfully!!!." >> result.log
-    fi
-}
-
 setTag_push_rm(){
     echo "TAG: ${TAG}"
     _do docker tag "${DOCKER_IMAGE_NAME}" "${DOCKER_ACCOUNT}"/"${DOCKER_IMAGE_NAME}":"${TAG}"
@@ -48,14 +31,8 @@ setTag_push_rm(){
     _do docker images
 }
 
-echo "Stage2 - Build Image"
-echo "INFORMATION - Start to Build......"
-echo "INFORMATION - Start to Build......"${DOCKER_IMAGE_NAME}":"$DOCKER_IMAGE_VERSION >> result.log
-echo "========================================"
-echo "========================================" >> result.log
-build_image
-echo "Stage3 - Set Tag and Push"
-echo "Stage3 - Set Tag and Push" >> result.log
+echo "Stage1 - Set Tag and Push"
+echo "Stage1 - Set Tag and Push" >> result.log
 echo "Build Number: ${TRAVIS_BUILD_NUMBER}"
 echo "TRAVIS_EVENT_TYPE: ${TRAVIS_EVENT_TYPE}"
 echo "TRAVIS_COMMIT_MESSAGE: ${TRAVIS_COMMIT_MESSAGE}"
@@ -72,7 +49,7 @@ echo "INFORMATION - Set TAG as ""${TAG}"" and push......"
 setTag_push_rm
 
 echo "========================================"
-echo "Stage4 - PULL and Verify"
+echo "Stage2 - PULL and Verify"
 echo "INFORMATION - Start to Pull ""${DOCKER_ACCOUNT}"/"${DOCKER_IMAGE_NAME}":"${TAG}"
 echo "INFORMATION - Before Pull - docker images"
 _do docker images
@@ -93,6 +70,22 @@ testBuildImage=$(docker images | grep "${TAG}")
 _do docker stop testdocker
 _do docker rm testdocker
 _do docker rmi ${DOCKER_ACCOUNT}"/"${DOCKER_IMAGE_NAME}":"${TAG}
-echo "========================================"
-echo "========================================" >> result.log
 
+# Deal With latest version
+if [ $DOCKER_USERNAME == $PROD_DOCKER_USERNAME ]; then #Is it "#sign-off"?
+    _do cd ${DOCKER_IMAGE_NAME}
+    if test -e latest.txt; then
+        LATEST_VERSION=$(cat latest.txt)
+        _do cd ..
+        echo "LATEST_VERSION:"$LATEST_VERSION
+        if [ $DOCKER_IMAGE_VERSION == $LATEST_VERSION ]; then             
+            echo "INFORMATION - This time, also need to push as latest version......"
+            echo "INFORMATION - This time, also need to push as latest version......" >> result.log    
+            TAG="latest"
+            echo "INFORMATION - Set TAG as ""${TAG}"" and push......" 
+            setTag_push_rm        
+        fi
+    else
+        _do cd ..
+    fi    
+fi
