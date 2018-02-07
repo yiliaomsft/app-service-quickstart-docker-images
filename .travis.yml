@@ -5,6 +5,7 @@ before_install:
      - chmod +x ./travis-script/test-dockerfile.sh
      - chmod +x ./travis-script/test-build.sh
      - chmod +x ./travis-script/test-push-pull-run.sh
+     - sudo apt-get install -y jq
 jobs:
   include:
     - stage: check Dockerfile
