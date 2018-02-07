@@ -139,12 +139,10 @@ merge_to_docker_list(){
 
 get_files_from_commit(){
     echo "start to get commit files..."
-    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/commits/"$commit_sha" | grep '"filename":' > commit_files.txt
-	sed -i 's/'\"filename\":'/''/g' commit_files.txt
-	sed -i 's/'\"'/''/g' commit_files.txt
-	sed -i 's/','/''/g' commit_files.txt
-	sed -i 's/ //g' commit_files.txt
-    echo "Below files are changed:"
+    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/commits/"$commit_sha" > commit_files.json
+	jq '.files | .[] | .filename' commit_files.json > commit_files.txt
+	sed -i 's/\"//g' commit_files.txt
+	echo "Below files are changed:"
     echo "Below files are changed:" >> result.log
     cat commit_files.txt
     cat commit_files.txt >> result.log
