@@ -27,12 +27,6 @@ test_Dockerfile(){
     fi
 }
 
-
-echo "========================================"
-echo "========================================" >> result.log
-echo "Stage1 - Verify Dockerfile"
-echo "Stage1 - Verify Dockerfile" >> result.log
-echo "INFORMATION: Start to Verifiy Dockerfile......"
 echo "Docker: "${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
 echo "Docker: "${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION} >> result.log
 _do cd ${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
@@ -40,7 +34,7 @@ test_Dockerfile
 _do cd ..
 _do cd ..
 echo "PASSED - Passed this stage." >> result.log
-echo "========================================"
+
 
 
 
