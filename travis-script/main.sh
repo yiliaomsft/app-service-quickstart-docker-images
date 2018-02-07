@@ -211,12 +211,9 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     get_files_from_commit
 	merge_to_docker_list    
 else
-    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/pulls/"${TRAVIS_PULL_REQUEST}"/commits | grep '\"sha\":' > TEMP.txt
-    sed -i 's/\"//g' TEMP.txt
-	sed -i 's/,//g' TEMP.txt
-	sed -i 's/://g' TEMP.txt
-    sed -i 's/      sha//g' TEMP.txt
-    cat TEMP.txt | grep sha > PR_SHAs.txt
+    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/pulls/"${TRAVIS_PULL_REQUEST}"/commits > TEMP.txt
+    jq '.[] | .sha' TEMP.txt > PR_SHAs.txt
+    sed -i 's/\"//g' PR_SHAs.txt	
     rm TEMP.txt
     echo "INFORMATION - This is a PR, Contains below Commits:"
     echo "INFORMATION - This is a PR, Contains below Commits:" >> result.log
