@@ -139,12 +139,10 @@ merge_to_docker_list(){
 
 get_files_from_commit(){
     echo "start to get commit files..."
-    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/commits/"$commit_sha" | grep '"filename":' > commit_files.txt
-	sed -i 's/'\"filename\":'/''/g' commit_files.txt
-	sed -i 's/'\"'/''/g' commit_files.txt
-	sed -i 's/','/''/g' commit_files.txt
-	sed -i 's/ //g' commit_files.txt
-    echo "Below files are changed:"
+    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/commits/"$commit_sha" > commit_files.json
+	jq '.files | .[] | .filename' commit_files.json > commit_files.txt
+	sed -i 's/\"//g' commit_files.txt
+	echo "Below files are changed:"
     echo "Below files are changed:" >> result.log
     cat commit_files.txt
     cat commit_files.txt >> result.log
@@ -213,12 +211,9 @@ if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     get_files_from_commit
 	merge_to_docker_list    
 else
-    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/pulls/"${TRAVIS_PULL_REQUEST}"/commits | grep '\"sha\":' > TEMP.txt
-    sed -i 's/\"//g' TEMP.txt
-	sed -i 's/,//g' TEMP.txt
-	sed -i 's/://g' TEMP.txt
-    sed -i 's/      sha//g' TEMP.txt
-    cat TEMP.txt | grep sha > PR_SHAs.txt
+    curl https://api.github.com/repos/"${TRAVIS_REPO_SLUG}"/pulls/"${TRAVIS_PULL_REQUEST}"/commits > TEMP.txt
+    jq '.[] | .sha' TEMP.txt > PR_SHAs.txt
+    sed -i 's/\"//g' PR_SHAs.txt	
     rm TEMP.txt
     echo "INFORMATION - This is a PR, Contains below Commits:"
     echo "INFORMATION - This is a PR, Contains below Commits:" >> result.log
