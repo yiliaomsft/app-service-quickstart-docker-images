@@ -12,7 +12,7 @@ test_Dockerfile(){
     echo "INFORMATION: Details of "${DOCKER_IMAGE_NAME}":"
     cat inspect.json
 
-    # Check Ports
+    # Check SSH Ports
     testSSH=$(jq .[].Config.ExposedPorts inspect.json | grep 2222)
     if [ -z "${testSSH}" ]; then 
         echo "FAILED - PORT 2222 isn't opened, SSH isn't working!!!"
@@ -21,7 +21,7 @@ test_Dockerfile(){
         echo "${testSSH}"
         echo "PASSED - PROT 2222 is opened."
     fi
-    
+
     # Check Volume
     testVOLUME=$(jq .[].Config.Volumes inspect.json | grep null)
     if [ -z "${testVOLUME}" ]; then 
@@ -31,6 +31,16 @@ test_Dockerfile(){
         exit 1
     else
         echo "PASSED - Great, there is no VOLUME lines."            
+    fi
+        
+    # Check User
+    testUSER=$(jq .[].Config.User inspect.json)
+    if test "${testUSER}" != '""' ; then        
+        echo "${testUSER}"
+        echo "FAILED - These USER lines should not be existed!!!"
+        exit 1
+    else
+        echo "PASSED - Great, there is no USER lines."            
     fi
 }
 
