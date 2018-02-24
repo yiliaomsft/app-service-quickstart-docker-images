@@ -12,7 +12,7 @@ test_Dockerfile(){
     echo "INFORMATION: Details of "${DOCKER_IMAGE_NAME}":"
     cat inspect.json
 
-    # Check Ports
+    # Check SSH Ports
     testSSH=$(jq .[].Config.ExposedPorts inspect.json | grep 2222)
     if [ -z "${testSSH}" ]; then 
         echo "FAILED - PORT 2222 isn't opened, SSH isn't working!!!"
@@ -21,7 +21,22 @@ test_Dockerfile(){
         echo "${testSSH}"
         echo "PASSED - PROT 2222 is opened."
     fi
-    
+
+    # Check SSH is opened
+    entryPointFile=$(jq .[].Config.Entrypoint inspect.json)
+    entryPointFile=$(echo $entryPointFile | sed 's/\[ \"//g')
+    entryPointFile=$(echo $entryPointFile | sed 's/\" ]//g')
+    _do cd ${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
+    testSSHEnable=$(cat $entryPointFile | grep "service ssh start")
+    _do cd $TRAVIS_BUILD_DIR    
+    if [ -z "${testSSHEnable}" ]; then 
+        echo "FAILED - Doesn't found cmd about enable SSH in entrypoint file!!!"
+        exit 1
+    else
+        echo "${testSSHEnable}"
+        echo "PASSED - Cmd about enable SSH is found in entrypoint file."
+    fi
+
     # Check Volume
     testVOLUME=$(jq .[].Config.Volumes inspect.json | grep null)
     if [ -z "${testVOLUME}" ]; then 
