@@ -13,6 +13,14 @@ test_Dockerfile(){
     cat inspect.json
 
     # Check SSH Ports
+    # Only 2 ports allowed where one is always 2222
+    testPORTS=$(jq .[].Config.ExposedPorts inspect.json | grep -o ":" | wc -w)
+    if [ ${testPORTS} -gt 2 ]; then
+        echo "${testPORTS}" 
+        echo "FAILED - Too many ports are exposed!!!"
+        exit 1
+    fi
+
     testSSH=$(jq .[].Config.ExposedPorts inspect.json | grep 2222)
     if [ -z "${testSSH}" ]; then 
         echo "FAILED - PORT 2222 isn't opened, SSH isn't working!!!"
@@ -46,6 +54,16 @@ test_Dockerfile(){
         exit 1
     else
         echo "PASSED - Great, there is no VOLUME lines."            
+    fi
+
+    # Check User
+    testUSER=$(jq .[].Config.User inspect.json)
+    if test "${testUSER}" != '""' ; then        
+        echo "${testUSER}"
+        echo "FAILED - These USER lines should not be existed!!!"
+        exit 1
+    else
+        echo "PASSED - Great, there is no USER lines."            
     fi
 }
 
