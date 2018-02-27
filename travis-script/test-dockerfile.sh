@@ -30,6 +30,21 @@ test_Dockerfile(){
         echo "PASSED - PROT 2222 is opened."
     fi
 
+    # Check SSH is opened
+    entryPointFile=$(jq .[].Config.Entrypoint inspect.json)
+    entryPointFile=$(echo $entryPointFile | sed 's/\[ \"//g')
+    entryPointFile=$(echo $entryPointFile | sed 's/\" ]//g')
+    _do cd ${DOCKER_IMAGE_NAME}"/"${DOCKER_IMAGE_VERSION}
+    testSSHEnable=$(cat $entryPointFile | grep "service ssh start")
+    _do cd $TRAVIS_BUILD_DIR    
+    if [ -z "${testSSHEnable}" ]; then 
+        echo "FAILED - Doesn't found cmd about enable SSH in entrypoint file!!!"
+        exit 1
+    else
+        echo "${testSSHEnable}"
+        echo "PASSED - Cmd about enable SSH is found in entrypoint file."
+    fi
+
     # Check Volume
     testVOLUME=$(jq .[].Config.Volumes inspect.json | grep null)
     if [ -z "${testVOLUME}" ]; then 
@@ -40,7 +55,7 @@ test_Dockerfile(){
     else
         echo "PASSED - Great, there is no VOLUME lines."            
     fi
-        
+
     # Check User
     testUSER=$(jq .[].Config.User inspect.json)
     if test "${testUSER}" != '""' ; then        
