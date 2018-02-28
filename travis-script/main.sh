@@ -250,6 +250,10 @@ fi
 show_docker_list
 echo "========================================"
 echo "========================================" >> result.log
+# Get folders from buildin repo
+if [ ! -e buildin_folders.txt ]; then
+    curl https://api.github.com/repos/azure/app-service-builtin-images/contents | jq '.[] | .path' > buildin_folders.txt
+fi
 # Verify Docker files.
 docker_count=1
 while [ $docker_count -le $dockers ]
@@ -271,6 +275,17 @@ do
         if [ $blank_count -gt 0 ]; then
             echo "ERROR - blank char should not be include in folder name!"
             echo "ERROR - PATH: "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
+            exit -1
+        fi
+        #verify_image_name
+        #The image name should not be exist in buildin repo        
+        resultExist=$(cat buildin_folders.txt | grep '"'${docker_image_name["${docker_count}"]}'"')
+        if [ -z $resultExist ];then
+            echo "PASS - There is no duplicate image name exist in buildin repo!!!"
+        else
+            echo "Build in repo folders:"
+            cat buildin_folders.txt
+            echo "ERROR - There is one duplicate image name exist in buildin repo: "$resultExist
             exit -1
         fi
         echo ""
