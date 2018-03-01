@@ -31,7 +31,7 @@ The submission process 6 step process as shown below. The time taken to approve 
 
 ![Submission workflow for docker images](images/submission-flow.PNG?raw=true)
 
-### Explaintion of setup 6 "Automated Deployment to Docker hub":
+### Guidance on setting tags during *Automated Deployment to Docker hub* step:
 
 The related image would be deployed to Docker hub automatically as soon as commit message include string "#sign-off". 
 Below 2 kinds of tags would be set.
