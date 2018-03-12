@@ -21,7 +21,7 @@ Please follow the guidelines to be compliant . If any docker image is out of com
 		a. Any changes with deployment of use of the image 
 		b. Include comments if the image is not backward compatible and how user can manually upgrade to new version 
 
-
++ [**Submission Work Flow**](/contribution-guide/submissionvalidation.md). The sequence diagram of submission validation work flow.
 + [**Best practices**](/contribution-guide/best-practices.md). Best practices for improving the quality of your docker image
 + [**Git tutorial**](/contribution-guide/git-tutorial.md). Step by step to get you started with Git.
 + [**Useful Tools**](/contribution-guide/useful-tools.md). Useful resources and tools for docker image development
@@ -30,6 +30,25 @@ Please follow the guidelines to be compliant . If any docker image is out of com
 The submission process 6 step process as shown below. The time taken to approve or reject a PR can vary as this is community driven. 
 
 ![Submission workflow for docker images](images/submission-flow.PNG?raw=true)
+
+### Guidance on setting tags during *Automated Deployment to Docker hub* step:
+
+The related image would be deployed to Docker hub automatically as soon as commit message include string "#sign-off". 
+Below 2 kinds of tags would be set.
+1. Set tag as the value of version folder name. For example:
+```
+Update files which under ..\my-image\0.1, 
+it would push my-image:0.1 to Docker hub.
+```
+2. Set tag as "latest".
+- There is 1 file names latest.txt exist under image folder.
+- The value of above file is as same as the related image version.
+For example: 
+```
+Update files which under ..\my-image\0.1, 
+..\my-image\latest.txt is exist and the content is "0.1", 
+it would also push my-image:latest to Docker hub.
+```
 
 ## Deploying Samples
 You can deploy these samples directly through the Azure Portal
