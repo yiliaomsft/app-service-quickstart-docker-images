@@ -58,7 +58,6 @@ echo "TRAVIS_TEST_RESULT: $TRAVIS_TEST_RESULT"
 # TRAVIS_TAG: If the current build is for a git tag, this variable is set to the tag’s name.
 echo "TRAVIS_TAG: $TRAVIS_TAG"
 
-
 docker_count=0
 
 show_docker_list(){
@@ -191,22 +190,12 @@ get_files_from_commit(){
 # main thread start from here!!!!
 echo "========================================"
 touch result.log
+# Get Changed files list / dockers list
 if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     echo "INFORMATION - This is a PUSH/MERGE, Contains below Commit:"
     echo "INFORMATION - This is a PUSH/MERGE, Contains below Commit:" >> result.log
     echo $TRAVIS_COMMIT
-    echo $TRAVIS_COMMIT >> result.log
-    SignOff="#sign-off"        
-    signOff=$(echo "${TRAVIS_COMMIT_MESSAGE}" | grep "${SignOff}")
-    if [ -n "${signOff}" ]; then
-        echo "========================================"
-        echo "========================================" >> result.log
-        echo "INFORMATION - COMMIT MESSAGE contains #sign-off, using PROD......"
-        echo "INFORMATION - COMMIT MESSAGE contains #sign-off, using PROD......" >> result.log
-        DOCKER_USERNAME=$PROD_DOCKER_USERNAME
-        DOCKER_ACCOUNT=$PROD_DOCKER_ACCOUNT
-        DOCKER_PASSWORD=$PROD_DOCKER_PASSWORD	       
-    fi    
+    echo $TRAVIS_COMMIT >> result.log    
     commit_sha=$TRAVIS_COMMIT    
     get_files_from_commit
 	merge_to_docker_list    
@@ -254,16 +243,26 @@ echo "========================================" >> result.log
 if [ ! -e buildin_folders.txt ]; then
     curl https://api.github.com/repos/azure/app-service-builtin-images/contents | jq '.[] | .path' > buildin_folders.txt
 fi
-# Verify Docker files.
+# Default account is TEST, if it's master branch, set PROD account.
+if [ "$TRAVIS_BRANCH" == "master" ];then
+    echo "========================================"
+    echo "========================================" >> result.log
+    echo "INFORMATION - Merge to master branch, using PROD......"
+    echo "INFORMATION - Merge to master branch, using PROD......" >> result.log
+    DOCKER_USERNAME=$PROD_DOCKER_USERNAME
+    DOCKER_ACCOUNT=$PROD_DOCKER_ACCOUNT
+    DOCKER_PASSWORD=$PROD_DOCKER_PASSWORD    
+fi
+# Verify Docker files 1 by 1.
 docker_count=1
 while [ $docker_count -le $dockers ]
-do     
-	docker_folder=${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
+do
+    docker_folder=${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}
     echo "========================================"
     echo "========================================" >> result.log
 	echo "PATH: "$docker_folder	
     echo "PATH: "$docker_folder	>> result.log
-	#Is this commit remove a Image/Version? If yes, we can skip this step.
+    #Is this commit remove this Image/Version? If yes, we can skip this step.
     if test ! -d $docker_folder; then
         echo "INFORMATION: This commit Remove "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}" !"
         echo "INFORMATION: This commit Remove "${docker_image_name["${docker_count}"]}"/"${docker_image_version["${docker_count}"]}" !" >> result.log
@@ -297,29 +296,45 @@ do
         ./travis-script/test-build.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
         test_result=$?		
 		if ((test_result!=0)); then
-			echo "ERROR - Build failed, Please double check......"            
-			exit -1
+		    echo "ERROR - Build failed, Please double check......"            
+		    exit -1
 		fi
-        echo "========================================"
-        echo "INFORMATION - Start to Verify Docker files:"
-        echo "========================================" >> result.log
-        echo "INFORMATION - Start to Verify Docker files:" >> result.log
-        ./travis-script/test-dockerfile.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
-		test_result=$?		
-		if [ $test_result -ne 0 ]; then
-			echo "ERROR - Verify failed, Please double check......"
-			exit -1
-		fi        
-        echo "========================================"
-        echo "INFORMATION - Start to PUSH/PULL/RUN:"
-        echo "========================================" >> result.log
-        echo "INFORMATION - Start to PUSH/PULL/RUN:" >> result.log
-        ./travis-script/test-push-pull-run.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
-        test_result=$?		
-		if ((test_result!=0)); then
-			echo "ERROR - PUSH/PULL/RUN failed, Please double check......"            
-			exit -1
-		fi
+        docker images
+        # It's PR for build-test branch, verify docker files and run image locally.
+        if [ "$TRAVIS_EVENT_TYPE" == "pull_request" ]; then
+            echo "========================================"
+            echo "INFORMATION - Start to Verify Docker files:"
+            echo "========================================" >> result.log
+            echo "INFORMATION - Start to Verify Docker files:" >> result.log
+            ./travis-script/test-dockerfile.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
+		    test_result=$?		
+		    if [ $test_result -ne 0 ]; then
+			    echo "ERROR - Verify failed, Please double check......"
+			    exit -1
+		    fi
+            echo "========================================"
+            echo "INFORMATION - Start to run Docker Image:"
+            echo "========================================" >> result.log
+            echo "INFORMATION - Start to run Docker Image:" >> result.log            
+            docker run -d -p 80:80 --name testdocker ${docker_image_name["${docker_count}"]}
+            test_result=$?		
+		    if ((test_result!=0)); then
+			    echo "ERROR - This image can't be run Normally failed, Please double check......"            
+			    exit -1
+		    fi
+        # It's Merge, push/pull/run.
+        else
+            echo "========================================"
+            echo "INFORMATION - Start to PUSH/PULL/RUN:"
+            echo "========================================" >> result.log
+            echo "INFORMATION - Start to PUSH/PULL/RUN:" >> result.log
+            ./travis-script/test-push-pull-run.sh ${docker_image_name["${docker_count}"]} ${docker_image_version["${docker_count}"]}
+            test_result=$?		
+		    if ((test_result!=0)); then
+			    echo "ERROR - PUSH/PULL/RUN failed, Please double check......"            
+			    exit -1
+		    fi
+        fi        
     fi
     let docker_count+=1
 done

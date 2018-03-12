@@ -31,18 +31,32 @@ setTag_push_rm(){
     _do docker images
 }
 
+_do echo "${DOCKER_PASSWORD}" | _do docker login -u="${DOCKER_USERNAME}" --password-stdin	
+
 echo "Stage1 - Set Tag and Push"
 echo "Stage1 - Set Tag and Push" >> result.log
 echo "Build Number: ${TRAVIS_BUILD_NUMBER}"
 echo "TRAVIS_EVENT_TYPE: ${TRAVIS_EVENT_TYPE}"
 echo "TRAVIS_COMMIT_MESSAGE: ${TRAVIS_COMMIT_MESSAGE}"
 
-# "#sign-off exist!"
-if [ $DOCKER_USERNAME == $PROD_DOCKER_USERNAME ]; then
-    echo "INFORMATION - This time, push to production docker repo......"    
+isSignOff="false"
+SignOff="#sign-off"        
+signOff=$(echo "${TRAVIS_COMMIT_MESSAGE}" | grep "${SignOff}")
+if [ -n "${signOff}" ]; then #contains "#Sign-off"
+    isSignOff="true"
+fi
+if [ $DOCKER_USERNAME == $PROD_DOCKER_USERNAME ]; then #It's master branch
+    echo "INFORMATION - This time, push to PROD docker hub....."
+    isSignOff="true"
+else
+    echo "INFORMATION - This time push to TEST docker hub......"
+fi
+
+if [ $isSignOff == "true" ]; then
+    echo "INFORMATION - This time, set tag as "${DOCKER_IMAGE_VERSION}" and push....."    
     TAG=${DOCKER_IMAGE_VERSION}       
 else
-    echo "INFORMATION - This time, push to Testing docker repo ....."    
+    echo "INFORMATION - This time, set tag as "${DOCKER_IMAGE_VERSION}"-"${TRAVIS_BUILD_NUMBER}" and push....."    
     TAG=${DOCKER_IMAGE_VERSION}"-"${TRAVIS_BUILD_NUMBER}        
 fi
 echo "INFORMATION - Set TAG as ""${TAG}"" and push......" 
@@ -72,7 +86,7 @@ _do docker rm testdocker
 _do docker rmi ${DOCKER_ACCOUNT}"/"${DOCKER_IMAGE_NAME}":"${TAG}
 
 # Deal With latest version
-if [ $DOCKER_USERNAME == $PROD_DOCKER_USERNAME ]; then #Is it "#sign-off"?
+if [ $isSignOff == "true" ]; then #Is it "#sign-off" or "master_brnach"?
     _do cd ${DOCKER_IMAGE_NAME}
     if test -e latest.txt; then
         LATEST_VERSION=$(cat latest.txt)
