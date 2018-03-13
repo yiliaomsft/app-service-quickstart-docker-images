@@ -31,8 +31,6 @@ setTag_push_rm(){
     _do docker images
 }
 
-_do echo "${DOCKER_PASSWORD}" | _do docker login -u="${DOCKER_USERNAME}" --password-stdin	
-
 echo "Stage1 - Set Tag and Push"
 echo "Stage1 - Set Tag and Push" >> result.log
 echo "Build Number: ${TRAVIS_BUILD_NUMBER}"
@@ -45,11 +43,13 @@ signOff=$(echo "${TRAVIS_COMMIT_MESSAGE}" | grep "${SignOff}")
 if [ -n "${signOff}" ]; then #contains "#Sign-off"
     isSignOff="true"
 fi
-if [ $DOCKER_USERNAME == $PROD_DOCKER_USERNAME ]; then #It's master branch
+if [ $DOCKER_ACCOUNT == $PROD_DOCKER_ACCOUNT ]; then #It's master branch
     echo "INFORMATION - This time, push to PROD docker hub....."
     isSignOff="true"
+    _do echo "${DOCKER_PASSWORD}" | _do docker login -u="${DOCKER_USERNAME}" --password-stdin
 else
     echo "INFORMATION - This time push to TEST docker hub......"
+    _do echo "${DOCKER_PASSWORD}" | _do docker login "${DOCKER_ACCOUNT}" -u="${DOCKER_USERNAME}" --password-stdin
 fi
 
 if [ $isSignOff == "true" ]; then
