@@ -322,6 +322,8 @@ do
 			    echo "ERROR - This image can't be run Normally failed, Please double check......"            
 			    exit -1
 		    fi
+            docker stop testdocker
+            docker rm testdocker
         # It's Merge, push/pull/run.
         else
             echo "========================================"
