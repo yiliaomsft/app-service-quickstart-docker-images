@@ -28,9 +28,32 @@ Please follow the guidelines to be compliant . If any docker image is out of com
 + [**Useful Tools**](/contribution-guide/useful-tools.md). Useful resources and tools for docker image development
 
 ## Submission workflow 
-The submission process 6 step process as shown below. The time taken to approve or reject a PR can vary as this is community driven. 
 
-![Submission workflow for docker images](images/work-flow.png)
+The submission process as shown below: 
+
+1. Fork the github repostiory
+2. Checkout branch build-test
+3. pull changes from build-test branch
+4. create a new branch or use build-test branch
+5. Commit your changes to the forked repository 
+6. Push changes to forked repository
+7. Send a PR ONLY to build-test branch of main repository
+8. Automated Travis CI will run to validate the PR 
+9. If build fails , fix the issues and commit changes to the same PR 
+10. if build passes  the reviewers for the PR will manual verfiy and provide guidance 
+11. PR is merged to build-test branch in main repo by repo reviewers 
+12. Repo reviewers (Owner) will run sanity test on web app for containers 
+13. If the image has no issues it will be merged into master 
+14. Image will be deployed to Docker hub 
+
+The time taken to approve or reject a PR can vary as this is community driven. 
+
+**Please submit PR to build-test branch ONLY . Any PR directly submitted to master from a contributor will be rejected.** 
+![Submission workflow for docker images](images/work-flow.png) 
+
+- Owner  : The team of members who maintain this repository and review, merge pull requests contributed to the repo.
+- Submitter : Contributor member of one or more docker images on this repository 
+
 
 ### Guidance on setting tags during *Automated Deployment to Docker hub* step:
 
