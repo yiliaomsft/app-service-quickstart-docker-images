@@ -1,3 +1,4 @@
+
 # Web App for Containers quick start docker images
 
 This repo contains all currently quick start docker images contributed by the community.	
@@ -17,7 +18,7 @@ Please follow the guidelines to be compliant . If any docker image is out of com
  
  *Note:  If you are updating an existing image  , create a new version folder within your image folder.*
   
-2.Include a README.md within version folder to describe :
+2.Must include a README.md within version folder to describe :
 		a. Any changes with deployment of use of the image 
 		b. Include comments if the image is not backward compatible and how user can manually upgrade to new version 
 
@@ -29,7 +30,7 @@ Please follow the guidelines to be compliant . If any docker image is out of com
 ## Submission workflow 
 The submission process 6 step process as shown below. The time taken to approve or reject a PR can vary as this is community driven. 
 
-![Submission workflow for docker images](images/submission-flow.PNG?raw=true)
+![Submission workflow for docker images](images/work-flow.png)
 
 ### Guidance on setting tags during *Automated Deployment to Docker hub* step:
 
