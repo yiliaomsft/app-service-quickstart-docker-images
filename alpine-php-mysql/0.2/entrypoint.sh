@@ -81,8 +81,15 @@ if [ "${DATABASE_TYPE}" == "local" ]; then
     fi
 fi
 
-echo "Starting SSH ..."
-rc-service sshd start
+test ! -d "$SUPERVISOR_LOG_DIR" && echo "INFO: $SUPERVISOR_LOG_DIR not found. creating ..." && mkdir -p "$SUPERVISOR_LOG_DIR"
 
+echo "Starting SSH ..."
 echo "Starting Apache httpd -D FOREGROUND ..."
-apachectl start -D FOREGROUND
+#rc-service sshd start
+#apachectl start -D FOREGROUND
+
+cd /usr/bin/
+supervisord -c /etc/supervisord.conf
+
+
+

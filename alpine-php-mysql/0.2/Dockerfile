@@ -3,7 +3,6 @@
 #
 FROM alpine:3.6
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
-
 # ========
 # ENV vars
 # ========
@@ -20,6 +19,8 @@ ENV PATH "$HTTPD_HOME/bin":$PATH
 # mariadb
 ENV MARIADB_DATA_DIR "/home/data/mysql"
 ENV MARIADB_LOG_DIR "/home/LogFiles/mysql"
+# supervisor
+ENV SUPERVISOR_LOG_DIR "/home/LogFiles/supervisor"
 # php
 ENV PHP_VERSION "7.1.10"
 ENV PHP_DOWNLOAD_URL "https://secure.php.net/get/php-"$PHP_VERSION.tar.gz"/from/this/mirror"
@@ -66,7 +67,7 @@ RUN set -x \
 # http://git.alpinelinux.org/cgit/aports/tree/main/apache2/apache2.pre-install?h=v3.3.2
 # http://git.alpinelinux.org/cgit/aports/tree/main/lighttpd/lighttpd.pre-install?h=v3.3.2
 # http://git.alpinelinux.org/cgit/aports/tree/main/nginx-initscripts/nginx-initscripts.pre-install?h=v3.3.2
-
+#
 RUN mkdir -p "$HTTPD_HOME" \
 	&& chown www-data:www-data "$HTTPD_HOME" \
     && mkdir -p "$HTTPD_SOURCE" \
@@ -127,13 +128,11 @@ RUN mkdir -p "$HTTPD_HOME" \
 			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
 	)" \
 	&& apk add --virtual .httpd-rundeps $runDeps \
-	&& apk del .build-deps \
-	
+	&& apk del .build-deps \	
 	# ----------
 	# 3. mariadb
 	# ----------
-        && apk add --update mariadb mariadb-client \
-	
+    && apk add --update mariadb mariadb-client \	
 	# ------
 	# 4. php
 	# ------
@@ -147,7 +146,7 @@ RUN mkdir -p "$HTTPD_HOME" \
 		tar \
 		xz \
 		# https://github.com/docker-library/php/issues/494
-                libressl \ 
+        libressl \ 
 	&& mkdir -p $PHP_CONF_DIR_SCAN \
 	&& cd $DOCKER_BUILD_HOME \
 	&& wget -O php.tar.gz "$PHP_DOWNLOAD_URL" --no-check-certificate \
@@ -166,13 +165,13 @@ RUN mkdir -p "$HTTPD_HOME" \
 		libjpeg-turbo-dev \
 		libpng-dev \
 		gmp-dev \
-                icu-dev \
-                openldap-dev \
-                libmcrypt-dev \	
+        icu-dev \
+        openldap-dev \
+        libmcrypt-dev \	
 		libxslt-dev \
-                apr-dev \
-                apr-util-dev \
-                apr-util-ldap \
+        apr-dev \
+        apr-util-dev \
+        apr-util-ldap \
 	&& cd $PHP_SOURCE \
 	&& ./configure \
 		--prefix=$PHP_HOME \
@@ -219,48 +218,49 @@ RUN mkdir -p "$HTTPD_HOME" \
 			| sort -u \
 			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
 	)" \
-	&& apk add --no-cache --virtual .php-rundeps $runDeps \
+	&& apk add --no-cache --virtual .php-rundeps $runDeps \	
+	&& pecl update-channels \
+	&& pecl install xdebug-beta \
 	&& apk del .build-deps \
 	# https://github.com/docker-library/php/issues/443
-	&& pecl update-channels \
-        && rm -rf /tmp/pear ~/.pearrc \
-    
+    && rm -rf /tmp/pear ~/.pearrc \    
 	# -------------
 	# 5. phpmyadmin
 	# -------------
 	&& mkdir -p $PHPMYADMIN_SOURCE \
 	&& cd $PHPMYADMIN_SOURCE \
 	&& wget -O phpmyadmin.tar.gz "$PHPMYADMIN_DOWNLOAD_URL" --no-check-certificate \
-	&& echo "$PHPMYADMIN_SHA256 *phpmyadmin.tar.gz" | sha256sum -c - \
-	
+	&& echo "$PHPMYADMIN_SHA256 *phpmyadmin.tar.gz" | sha256sum -c - \     	
 	# ------
 	# 6. ssh
 	# ------
-        && apk add --update openssh-server \
-	&& echo "$SSH_PASSWD" | chpasswd \
-	
+    && apk add --update openssh-server \
+	&& echo "$SSH_PASSWD" | chpasswd \	
 	#---------------
 	# openrc service
 	#---------------
-        && apk update && apk add openrc \         
+    && apk update && apk add openrc \         
     # can't do cgroups
     && sed -i 's/"cgroup_add_service/" # cgroup_add_service/g' /lib/rc/sh/openrc-run.sh \
-
+	#---------------
+	# supervisor service
+	#---------------
+    && apk update && apk add supervisor \   
  	# -----------
 	# ~. clean up
 	# -----------
-	&& rm -rf /var/cache/apk/* /tmp/* 	
-
+	&& rm -rf /var/cache/apk/* /tmp/*
 # =========
 # Configure
 # =========
-
+#
 # httpd
 COPY httpd.conf $HTTPD_CONF_DIR/
 COPY httpd-modules.conf $HTTPD_CONF_DIR/
 COPY httpd-php.conf $HTTPD_CONF_DIR/
 # php
 COPY php.ini $PHP_CONF_DIR/
+COPY xdebug.ini $PHP_CONF_DIR_SCAN/
 COPY php-opcache.ini $PHP_CONF_DIR_SCAN/
 # phpmyadmin
 COPY httpd-phpmyadmin.conf $HTTPD_CONF_DIR/
@@ -282,12 +282,18 @@ RUN set -ex \
 	&& rm -rf /var/log/mysql \
 	&& ln -s $MARIADB_LOG_DIR /var/log/mysql \
 	##
+	&& rm -rf /var/log/supervisor \
+	&& ln -s $SUPERVISOR_LOG_DIR /var/log/supervisor \
+	##
 	&& ln -s $PHPMYADMIN_HOME /var/www/phpmyadmin \
-	&& ln -s $APP_HOME /var/www/wwwroot 
-
+	&& ln -s $APP_HOME /var/www/wwwroot \
+	##
+	&& rm -f /etc/supervisord.conf 	
+#
 # =====
 # final
 # =====
+COPY supervisord.conf /etc/
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod u+x /usr/local/bin/entrypoint.sh
 EXPOSE 2222 80
