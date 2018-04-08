@@ -52,6 +52,7 @@ RUN set -ex \
 	&& essentials=" \
 		ca-certificates \
         wget \
+		make \
 	" \
 	&& apt-get update \
 	&& apt-get install -y -V --no-install-recommends $essentials \
@@ -69,9 +70,12 @@ RUN set -ex \
         php7.0-dba \
         php7.0-mysql \
 		php7.0-xml \
+		php7.0-dev \
 	" \
     && apt-get update \
 	&& apt-get install -y -V --no-install-recommends $phps \
+	&& pecl update-channels \
+	&& pecl install xdebug-beta \
 	&& rm -r /var/lib/apt/lists/* \
     #
     # ------
@@ -137,7 +141,8 @@ RUN set -ex\
 COPY sshd_config /etc/ssh/
  
 # php
-COPY php.ini /etc/php/7.0/cli/php.ini
+COPY php.ini /etc/php/7.0/fpm/php.ini
+COPY xdebug.ini /etc/php/7.0/fpm/conf.d/xdebug.ini
 COPY www.conf /etc/php/7.0/fpm/pool.d/www.conf
 
 # nginx
