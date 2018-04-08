@@ -38,14 +38,26 @@ setup_phpmyadmin(){
     tar -xf phpmyadmin.tar.gz -C $PHPMYADMIN_HOME --strip-components=1
     cp -R phpmyadmin-config.inc.php $PHPMYADMIN_HOME/config.inc.php
     rm -rf $PHPMYADMIN_SOURCE
-    chown -R www-data:www-data $PHPMYADMIN_HOME
+    if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+        echo "INFO: NOT in Azure, chown for "$PHPMYADMIN_HOME  
+        chown -R www-data:www-data $PHPMYADMIN_HOME
+    fi    
 }
 
 test ! -d "$APP_HOME" && echo "INFO: $APP_HOME not found. creating..." && mkdir -p "$APP_HOME"
-chown -R www-data:www-data $APP_HOME
+if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+    echo "INFO: NOT in Azure, chown for "$APP_HOME  
+    chown -R www-data:www-data $APP_HOME
+fi 
+test ! -e "$APP_HOME/index.php" && echo "INFO: index.php not found. createing" && echo "<?php phpinfo();?>" > "$APP_HOME/index.php"
+
 
 test ! -d "$HTTPD_LOG_DIR" && echo "INFO: $HTTPD_LOG_DIR not found. creating..." && mkdir -p "$HTTPD_LOG_DIR"
-chown -R www-data:www-data $HTTPD_LOG_DIR
+if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+    echo "INFO: NOT in Azure, chown for "$HTTPD_LOG_DIR  
+    chown -R www-data:www-data $HTTPD_LOG_DIR
+fi 
+
 
 echo "Setup openrc ..." && openrc && touch /run/openrc/softlevel
 
