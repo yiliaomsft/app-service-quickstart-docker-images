@@ -7,9 +7,9 @@ MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
 # ENV vars
 # ========
 #apache httpd
-ENV HTTPD_VERSION "2.4.29"
+ENV HTTPD_VERSION "2.4.33"
 ENV HTTPD_DOWNLOAD_URL "http://archive.apache.org/dist/httpd/httpd-"$HTTPD_VERSION".tar.gz"
-ENV HTTPD_SHA256 "948e4a11278a5954698b880b30f401b1e9ab743713ee2c7280a54dd4ddd87085"
+ENV HTTPD_SHA256 "cd34636caf03c9a897ddfc928fc866c965f23d909b9612880563a7ad0d1a7e5b"
 ENV HTTPD_SOURCE "/usr/src/httpd"
 ENV HTTPD_HOME "/usr/local/httpd"
 ENV HTTPD_CONF_DIR "$HTTPD_HOME/conf"
@@ -22,9 +22,9 @@ ENV MARIADB_LOG_DIR "/home/LogFiles/mysql"
 # supervisor
 ENV SUPERVISOR_LOG_DIR "/home/LogFiles/supervisor"
 # php
-ENV PHP_VERSION "7.1.10"
+ENV PHP_VERSION "7.2.4"
 ENV PHP_DOWNLOAD_URL "https://secure.php.net/get/php-"$PHP_VERSION.tar.gz"/from/this/mirror"
-ENV PHP_SHA256 "edc6a7c3fe89419525ce51969c5f48610e53613235bbef255c3a4db33b458083"
+ENV PHP_SHA256 "58e28e978baea0fe9009432bcb436934eaacccfdcb5f5409c7526431a595857b"
 ENV PHP_SOURCE "/usr/src/php"
 ENV PHP_HOME "/usr/local/php"
 ENV PHP_CONF_DIR $PHP_HOME"/etc"
@@ -32,9 +32,9 @@ ENV PHP_CONF_FILE $PHP_CONF_DIR"/php.ini"
 ENV PHP_CONF_DIR_SCAN $PHP_CONF_DIR"/conf.d"
 ENV PATH "$PHP_HOME/bin":$PATH
 # phpmyadmin
-ENV PHPMYADMIN_VERSION "4.7.5"
+ENV PHPMYADMIN_VERSION "4.8.0"
 ENV PHPMYADMIN_DOWNLOAD_URL "https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VERSION/phpMyAdmin-$PHPMYADMIN_VERSION-all-languages.tar.gz"
-ENV PHPMYADMIN_SHA256 "c62b4072b9dc2a858f51ddd95e731c4717eb2fba85e1e108564736b8c8de1a2b"
+ENV PHPMYADMIN_SHA256 "1e83d60627d8036261af71220eae9ffd8d3150778702720905bcfa85c40ce346"
 ENV PHPMYADMIN_SOURCE "/usr/src/phpmyadmin"
 ENV PHPMYADMIN_HOME "/home/phpmyadmin"
 # ssh
@@ -87,18 +87,18 @@ RUN mkdir -p "$HTTPD_HOME" \
 		libc-dev \
 		# mod_session_crypto
 		libressl \
-		libressl-dev \
+		libressl-dev \		
 		# mod_proxy_html mod_xml2enc
 		libxml2-dev \
 		# mod_lua
-                lua-dev \
+        lua-dev \
   		make \
 		# mod_http2
 		nghttp2-dev \
-                pcre-dev \
+        pcre-dev \
 		tar \
 		# mod_deflate
-                zlib-dev \
+        zlib-dev \		
 	&& cd $DOCKER_BUILD_HOME \
 	&& wget -O httpd.tar.gz $HTTPD_DOWNLOAD_URL --no-check-certificate \
 	&& echo "$HTTPD_SHA256 *httpd.tar.gz" | sha256sum -c - \
