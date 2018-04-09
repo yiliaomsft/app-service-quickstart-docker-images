@@ -8,12 +8,12 @@ This repository contains docker images that are used for App Service Linux. Some
 ## Components
 This docker image currently contains the following components:
 
-1. Nginx (1.13.8)   
+1. Nginx (1.13.11)   
 2. PHP (7.0.27) 
 3. Composer (1.6.1)
 4. Drush
 5. MariaDB ( 10.1.26/if using Local Database )
-4. Phpmyadmin ( 4.7.7/if using Local Database )
+4. Phpmyadmin ( 4.8.0/if using Local Database )
 
 # How to Deploy to Azure 
 1. Create a Web App for Containers 
@@ -35,12 +35,25 @@ DATABASE_PASSWORD | some-string
 
 4. Browse http://[website]/phpmyadmin 
 
+# How to turn on Xdebug to profile the app
+1. By default Xdebug is turned off as turning it on impacts performance.
+2. Connect by SSH.
+3. Go to ```/etc/php/7.0/fpm/conf.d```,  Update ```xdebug.ini``` as wish, don't modify the path of below line.
+```zend_extension=/usr/local/php/lib/php/20151012/xdebug.so```
+4. Save ```xdebug.ini```, Restart php-fpm by below cmd: 
+```service fpm7.0-fpm restart```
+5. Xdebug is turned on.
+
 ## Limitations
 - Some unexpected issues may happen after you scale out your site to multiple instances, if you deploy a site on Azure with this docker image and use the MariaDB built in this docker image as the database.
 - The phpMyAdmin built in this docker image is available only when you use the MariaDB built in this docker image as the database.
 - Must include  App Setting ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  since we need files to be persisted.
 
 ## Change Log
+- **Version 0.3** 
+  1. Add Xdebug.
+  2. Update version of nginx to 1.13.11.
+  3. Update version of phpmyadmin to 4.8.0.
 - **Version 0.2** 
   1. Supports local MySQL.
   2. Create default database - azurelocaldb.(You need set DATABASE_TYPE to **"local"**)
