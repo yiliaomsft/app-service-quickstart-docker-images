@@ -25,4 +25,6 @@ $cfg['SaveDir'] = '';
 /* https://boss.vvc.edu/database_access/doc/html/config.html#cfg_CheckConfigurationPermissions */
 $cfg['CheckConfigurationPermissions']=false;
 
+$cfg['ForceSSL']=false;
+
 ?>
