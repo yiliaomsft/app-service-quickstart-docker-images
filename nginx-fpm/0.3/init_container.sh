@@ -36,7 +36,7 @@ setup_phpmyadmin(){
     test ! -d "$PHPMYADMIN_HOME" && echo "INFO: $PHPMYADMIN_HOME not found. creating..." && mkdir -p "$PHPMYADMIN_HOME"
     cd $PHPMYADMIN_SOURCE
     tar -xf phpMyAdmin.tar.gz -C $PHPMYADMIN_HOME --strip-components=1
-    cp -R phpMyAdmin-config.inc.php $PHPMYADMIN_HOME/config.inc.php
+    cp -R phpmyadmin-config.inc.php $PHPMYADMIN_HOME/config.inc.php
 	cp -R phpmyadmin-nginx.conf /etc/nginx/nginx.conf
 	cd /
     rm -rf $PHPMYADMIN_SOURCE
@@ -61,7 +61,10 @@ echo "INFO: creating /run/php/php7.0-fpm.sock ..."
 test -e /run/php/php7.0-fpm.sock && rm -f /run/php/php7.0-fpm.sock
 mkdir -p /run/php
 touch /run/php/php7.0-fpm.sock
-chown www-data:www-data /run/php/php7.0-fpm.sock
+if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+    echo "INFO: NOT in Azure, chown for /run/php/php7.0-fpm.sock"  
+    chown -R www-data:www-data /run/php/php7.0-fpm.sock 
+fi 
 chmod 777 /run/php/php7.0-fpm.sock
 
 DATABASE_TYPE=$(echo ${DATABASE_TYPE}|tr '[A-Z]' '[a-z]')
