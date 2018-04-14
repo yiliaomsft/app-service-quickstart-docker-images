@@ -56,7 +56,7 @@ setup_wordpress(){
 	test ! -d "$WORDPRESS_HOME" && echo "INFO: $WORDPRESS_HOME not found. creating ..." && mkdir -p "$WORDPRESS_HOME"
 	cd $WORDPRESS_HOME
 	GIT_REPO=${GIT_REPO:-https://github.com/azureappserviceoss/wordpress-azure}
-	GIT_BRANCH=${GIT_BRANCH:-linux_appservice}
+	GIT_BRANCH=${GIT_BRANCH:-linux-appservice}
 	echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
 	echo "REPO: "$GIT_REPO
 	echo "BRANCH: "$GIT_BRANCH
