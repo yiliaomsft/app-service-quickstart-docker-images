@@ -1,6 +1,6 @@
 FROM nginx
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
-
+# This is latest version, 4-17-2018
 # ========
 # ENV vars
 # ========
