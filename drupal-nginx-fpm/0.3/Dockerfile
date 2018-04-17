@@ -1,4 +1,4 @@
-FROM appsvcorg/nginx-fpm:0.2
+FROM appsvcorg/nginx-fpm:0.3
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
 
 # ========
@@ -7,7 +7,6 @@ MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
 #
 ENV DOCKER_BUILD_HOME "/dockerbuild"
 # drupal 
-ENV DRUPAL_SOURCE "/usr/src/drupal" 
 ENV DRUPAL_HOME "/home/site/wwwroot"
 # mariadb
 ENV MARIADB_DATA_DIR "/home/data/mysql"
@@ -30,12 +29,23 @@ ENV PHP_CONF_FILE $PHP_CONF_DIR"/php.ini"
 
 RUN mkdir -p $DOCKER_BUILD_HOME
 WORKDIR $DOCKER_BUILD_HOME
+# --------
+# ~. tools
+# --------
+RUN set -ex \
+    && apt-get update \
+    && apt-get install -y -V --no-install-recommends git
 
 # -------------
 # 1. Drupal
 # -------------
-RUN  mkdir -p $DRUPAL_SOURCE 
-COPY drupal.tar.gz $DRUPAL_SOURCE/
+# Install by Git
+
+# ----------
+	# ~. clean up
+	# ----------
+RUN set -ex \
+	&& apt-get autoremove -y
 
 # =========
 # Configure

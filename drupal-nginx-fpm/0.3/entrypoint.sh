@@ -44,24 +44,33 @@ setup_phpmyadmin(){
         chown -R www-data:www-data $PHPMYADMIN_HOME
 	fi
 }
-#unzip drupal
-setup_drupal(){
-    # tar drupal
-    cd $DRUPAL_SOURCE 
-    tar -xf drupal.tar.gz -C $DRUPAL_HOME/ --strip-components=1 
+#Get drupal from Git
+setup_drupal(){    
+    cd $DRUPAL_HOME
+	GIT_REPO=${GIT_REPO:-https://github.com/azureappserviceoss/drupalcms-azure}
+	GIT_BRANCH=${GIT_BRANCH:-linuxappservice}
+	echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
+	echo "REPO: "$GIT_REPO
+	echo "BRANCH: "$GIT_BRANCH
+	echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
+    
+	echo "INFO: Clone from "$GIT_REPO
+    git clone $GIT_REPO $DRUPAL_HOME	
+	if [ "$GIT_BTANCH" != "master" ];then
+		echo "INFO: Checkout to "$GIT_BRANCH
+		git fetch origin
+	    git branch --track $GIT_BRANCH origin/$GIT_BRANCH && git checkout $GIT_BRANCH
+	fi	
+	
     chmod a+w "$DRUPAL_HOME/sites/default" 
     mkdir -p "$DRUPAL_HOME/sites/default/files"
     chmod a+w "$DRUPAL_HOME/sites/default/files"
-    cp "$DRUPAL_HOME/sites/default/default.settings.php" "$DRUPAL_HOME/sites/default/settings.php"
-    chmod a+w "$DRUPAL_HOME/sites/default/settings.php"
+	if test ! -e "$DRUPAL_HOME/sites/default/settings.php"; then 
+        #Test this time, after git pull, myabe drupal has already installed in repo.
+        cp "$DRUPAL_HOME/sites/default/default.settings.php" "$DRUPAL_HOME/sites/default/settings.php"
+        chmod a+w "$DRUPAL_HOME/sites/default/settings.php"
+	fi
 }
-
-# setup server root
-test ! -d "$DRUPAL_HOME" && echo "INFO: $DRUPAL_HOME not found. creating..." && mkdir -p "$DRUPAL_HOME"
-if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
-    echo "INFO: NOT in Azure, chown for "$DRUPAL_HOME  
-    chown -R www-data:www-data $DRUPAL_HOME 
-fi 
 
 # setup nginx log dir
 # http://nginx.org/en/docs/ngx_core_module.html#error_log
@@ -101,12 +110,24 @@ if [ "${DATABASE_TYPE}" == "local" ]; then
 fi
 
 # setup Drupal
-if test ! -e "$DRUPAL_HOME/sites/default/settings.php"; then
-    echo "Installing Drupal ..."
+if test ! -e "$DRUPAL_HOME/sites/default/settings.php"; then 
+#Test this time, if WEBSITES_ENABLE_APP_SERVICE_STORAGE = true and drupal has already installed.
+    echo "Installing Drupal ..."    
+    # If home folder is exist, clean it, ready to git pull
+    while test -d "$DRUPAL_HOME"  
+    do
+        echo "INFO: $DRUPAL_HOME is exist, clean it to ready for git..."
+        rm -rf $DRUPAL_HOME
+    done 
+    test ! -d "$DRUPAL_HOME" && echo "INFO: $DRUPAL_HOME not found. creating..." && mkdir -p "$DRUPAL_HOME"
+
+    if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+        echo "INFO: NOT in Azure, chown for "$DRUPAL_HOME  
+        chown -R www-data:www-data $DRUPAL_HOME 
+    fi 
     setup_drupal
 fi
 cd $DRUPAL_HOME
-rm -rf $DRUPAL_SOURCE
        
 echo "Starting SSH ..."
 service ssh start
