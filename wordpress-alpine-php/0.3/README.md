@@ -60,6 +60,27 @@ DATABASE_PASSWORD | some-string
 ```apachectl restart```
 5. Xdebug is turned on.
 
+## Updating WordPress version , themes , files 
+
+If ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = false  ( which is the default setting ) , we recommend you DO NOT update the WordPress core version , themes or files from WordPress admin dashboard. 
+
+Choose either one option to updated your files : 
+
+There is a tradeoff between file server stability and file persistence . 
+##### OPTION 1 : 
+Since we are using local storage for better stability for the web app , you will not get file persistence.  In this case , we recommend to follow these steps to update WordPress Core  or a theme or a Plugins version :
+1.	Fork the repo https://github.com/azureappserviceoss/wordpress-azure 
+2.	Clone your repo locally and make sure to use ONLY linux-appservice branch 
+3.	Download the latest version of WordPress , plugin or theme being used locally 
+4.	Commit the latest version bits into local folder of your cloned repo 
+5.	Push your changes to the your forked repo 
+6.	Login to Azure portal and select your web app 
+7.	Click on Application Settings -> App Settings and change GIT_REPO to use your repository from step #1. If you have changed the branch name , you can continue to use linux-apservice . If you wish to use a different branch , update GIT_BRANCH setting as well. 
+
+##### OPTION 2 :  
+You can update ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  to enable app service storage to have file persistence . Note when there are issues with storage  due to networking or when app service platform is being updated , your app can be impacted . 
+
+
 ## Limitations
 - Some unexpected issues may happen after you scale out your site to multiple instances, if you deploy a WordPress site on Azure with this docker image and use the MariaDB built in this docker image as the database.
 - The phpMyAdmin built in this docker image is available only when you use the MariaDB built in this docker image as the database.
