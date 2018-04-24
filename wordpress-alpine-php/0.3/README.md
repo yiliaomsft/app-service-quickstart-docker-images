@@ -66,9 +66,7 @@ If ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = false  ( which is the default set
 
 Choose either one option to updated your files : 
 
-There is a tradeoff between file server stability and file persistence . 
-##### OPTION 1 : 
-Since we are using local storage for better stability for the web app , you will not get file persistence.  In this case , we recommend to follow these steps to update WordPress Core  or a theme or a Plugins version :
+There is a tradeoff between file server stability and file persistence . Since we are using local storage for better stability for the web app , you will not get file persistence.  In this case , we recommend to follow these steps to update WordPress Core  or a theme or a Plugins version :
 1.	Fork the repo https://github.com/azureappserviceoss/wordpress-azure 
 2.	Clone your repo locally and make sure to use ONLY linux-appservice branch 
 3.	Download the latest version of WordPress , plugin or theme being used locally 
@@ -76,9 +74,6 @@ Since we are using local storage for better stability for the web app , you will
 5.	Push your changes to the your forked repo 
 6.	Login to Azure portal and select your web app 
 7.	Click on Application Settings -> App Settings and change GIT_REPO to use your repository from step #1. If you have changed the branch name , you can continue to use linux-apservice . If you wish to use a different branch , update GIT_BRANCH setting as well. 
-
-##### OPTION 2 :  
-You can update ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  to enable app service storage to have file persistence . Note when there are issues with storage  due to networking or when app service platform is being updated , your app can be impacted . 
 
 
 ## Limitations
