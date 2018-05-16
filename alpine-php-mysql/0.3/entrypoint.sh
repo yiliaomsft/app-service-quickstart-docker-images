@@ -88,11 +88,12 @@ if [ "${DATABASE_TYPE}" == "local" ]; then
     echo "Installing phpMyAdmin ..."
     setup_phpmyadmin
     echo "Loading phpMyAdmin conf ..."
-    if ! grep -q "^Include conf/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
-        echo 'Include conf/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
+    if ! grep -q "^Include conf.d/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
+        echo 'Include conf.d/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
     fi
 fi
 
+test ! -d "$HTTPD_PID_DIR" && echo "INFO: $HTTPD_PID_DIR not found. creating ..." && mkdir -p "$HTTPD_PID_DIR"
 test ! -d "$SUPERVISOR_LOG_DIR" && echo "INFO: $SUPERVISOR_LOG_DIR not found. creating ..." && mkdir -p "$SUPERVISOR_LOG_DIR"
 
 echo "Starting SSH ..."
