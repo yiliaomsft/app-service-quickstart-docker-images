@@ -47,8 +47,8 @@ setup_phpmyadmin(){
     
 
 load_phpmyadmin(){
-        if ! grep -q "^Include conf/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
-                echo 'Include conf/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
+        if ! grep -q "^Include conf.d/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
+                echo 'Include conf.d/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
         fi
 }
 
@@ -85,8 +85,8 @@ update_wordpress_config(){
 }
 
 load_wordpress(){
-        if ! grep -q "^Include conf/httpd-wordpress.conf" $HTTPD_CONF_FILE; then
-                echo 'Include conf/httpd-wordpress.conf' >> $HTTPD_CONF_FILE
+        if ! grep -q "^Include conf.d/httpd-wordpress.conf" $HTTPD_CONF_FILE; then
+                echo 'Include conf.d/httpd-wordpress.conf' >> $HTTPD_CONF_FILE
         fi
 }
 
@@ -131,9 +131,7 @@ if [ "${DATABASE_TYPE}" == "local" ]; then
     echo "Installing phpMyAdmin ..."
     setup_phpmyadmin
     echo "Loading phpMyAdmin conf ..."
-    if ! grep -q "^Include conf/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
-        echo 'Include conf/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
-    fi
+	load_phpmyadmin    
 fi
 
 # That wp-config.php doesn't exist means WordPress is not installed/configured yet.
@@ -181,9 +179,12 @@ echo "Loading WordPress conf ..."
 load_wordpress
 rm -rf $WORDPRESS_SOURCE
 
+echo "Starting Redis ..."
+redis-server &
 echo "Starting SSH ..."
 echo "Starting Apache httpd -D FOREGROUND ..."
 
+test ! -d "$HTTPD_PID_DIR" && echo "INFO: $HTTPD_PID_DIR not found. creating ..." && mkdir -p "$HTTPD_PID_DIR"
 test ! -d "$SUPERVISOR_LOG_DIR" && echo "INFO: $SUPERVISOR_LOG_DIR not found. creating ..." && mkdir -p "$SUPERVISOR_LOG_DIR"
 cd /usr/bin/
 supervisord -c /etc/supervisord.conf

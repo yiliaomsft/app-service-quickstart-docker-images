@@ -1,20 +1,17 @@
 #
 # Dockerfile for WordPress
 #
-FROM appsvcorg/alpine-php-mysql:0.2 
+FROM appsvcorg/alpine-php-mysql:0.3
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
 
 # ========
 # ENV vars
 # ========
-
 # wordpress
 ENV WORDPRESS_SOURCE "/usr/src/wordpress"
 ENV WORDPRESS_HOME "/home/site/wwwroot"
-
 #
 ENV DOCKER_BUILD_HOME "/dockerbuild"
-
 # ====================
 # Download and Install
 # ~. tools
@@ -36,7 +33,7 @@ RUN set -ex \
 	# 2. wordpress
 	# ------------
 	&& mkdir -p $WORDPRESS_SOURCE \
-        # cp in final
+    # cp in final
 	# ----------
 	# ~. clean up
 	# ----------
