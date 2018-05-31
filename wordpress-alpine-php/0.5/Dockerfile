@@ -24,19 +24,22 @@ RUN set -ex \
     # --------
 	# ~. tools
 	# --------
-    && apk add --update git \
+    && apk add --update git tcpdump tcptraceroute\
 	# --------
 	# 1. redis
 	# --------
     && apk add --update redis \
+    && apk add --update php7-redis \
 	# ------------	
 	# 2. wordpress
 	# ------------
 	&& mkdir -p $WORDPRESS_SOURCE \
     # cp in final
 	# ----------
-	# ~. clean up
+	# ~. upgrade/clean up
 	# ----------
+	&& apk update \
+	&& apk upgrade \
 	&& rm -rf /var/cache/apk/* 
 
 # =========
