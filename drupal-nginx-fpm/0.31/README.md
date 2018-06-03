@@ -92,7 +92,9 @@ You can update ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  to enable app s
 - Must include  App Setting ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  as soon as you need files to be persisted.
 - Deploy to Azure, Pull and run this image need some time, You can include App Setting ```WEBSITES_CONTAINER_START_TIME_LIMIT``` to specify the time in seconds as need, Default is 240 and max is 600.
 
-## Change Log
+## Change Log 
+- **Version 0.31**
+  1. Install some common debug tools, netstat, tcpping, tcpdump.
 - **Version 0.3**
   1. Use Git to deploy Drupal.
   2. Add Xdebug extension of PHP.
