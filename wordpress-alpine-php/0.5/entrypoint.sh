@@ -43,8 +43,7 @@ setup_phpmyadmin(){
         echo "INFO: NOT in Azure, chown for "$PHPMYADMIN_HOME  
         chown -R www-data:www-data $PHPMYADMIN_HOME
     fi 
-}
-    
+}    
 
 load_phpmyadmin(){
         if ! grep -q "^Include conf.d/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
@@ -55,26 +54,36 @@ load_phpmyadmin(){
 setup_wordpress(){
 	test ! -d "$WORDPRESS_HOME" && echo "INFO: $WORDPRESS_HOME not found. creating ..." && mkdir -p "$WORDPRESS_HOME"
 	cd $WORDPRESS_HOME
-	GIT_REPO=${GIT_REPO:-https://github.com/azureappserviceoss/wordpress-azure}
-	GIT_BRANCH=${GIT_BRANCH:-linux-appservice}
-	echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
-	echo "REPO: "$GIT_REPO
-	echo "BRANCH: "$GIT_BRANCH
-	echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
+    if ! [ -e wp-includes/version.php ]; then
+        echo "INFO: There in no wordpress, going to GIT pull...:"
+        rm -rf * .*
+        GIT_REPO=${GIT_REPO:-https://github.com/azureappserviceoss/wordpress-azure}
+	    GIT_BRANCH=${GIT_BRANCH:-linux-appservice}
+	    echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
+	    echo "REPO: "$GIT_REPO
+	    echo "BRANCH: "$GIT_BRANCH
+	    echo "INFO: ++++++++++++++++++++++++++++++++++++++++++++++++++:"
     
-	echo "INFO: Clone from "$GIT_REPO		
-    git clone $GIT_REPO $WORDPRESS_HOME	
-	if [ "$GIT_BTANCH" != "master" ];then
-		echo "INFO: Checkout to "$GIT_BRANCH
-		git fetch origin
-	    git branch --track $GIT_BRANCH origin/$GIT_BRANCH && git checkout $GIT_BRANCH
-	fi	
+	    echo "INFO: Clone from "$GIT_REPO		
+        git clone $GIT_REPO $WORDPRESS_HOME	
+	    if [ "$GIT_BTANCH" != "master" ];then
+		    echo "INFO: Checkout to "$GIT_BRANCH
+		    git fetch origin
+	        git branch --track $GIT_BRANCH origin/$GIT_BRANCH && git checkout $GIT_BRANCH
+	    fi	
+        # The wp-config.php is designed for default GIT/BRANCH, remove it if need.
+        if [ "${DATABASE_TYPE}" != "local" -a "${GIT_REPO}" == "https://github.com/azureappserviceoss/wordpress-azure" -a "${GIT_BRANCH}" == "linux-appservice" ];then
+           rm wp-config.php
+        fi
+    else
+        echo "INFO: There is one wordpress exist, no need to GIT pull again."
+    fi
+	
 	# Although in AZURE, we still need below chown cmd.
     chown -R www-data:www-data $WORDPRESS_HOME    
 }
 
-update_wordpress_config(){	
-    
+update_wordpress_config(){    
 	DATABASE_HOST=${DATABASE_HOST:-localhost}
 	DATABASE_NAME=${DATABASE_NAME:-azurelocaldb}
 	# if DATABASE_USERNAME equal phpmyadmin, it means it's nothing at beginning.
@@ -85,9 +94,9 @@ update_wordpress_config(){
 }
 
 load_wordpress(){
-        if ! grep -q "^Include conf.d/httpd-wordpress.conf" $HTTPD_CONF_FILE; then
-                echo 'Include conf.d/httpd-wordpress.conf' >> $HTTPD_CONF_FILE
-        fi
+    if ! grep -q "^Include conf.d/httpd-wordpress.conf" $HTTPD_CONF_FILE; then
+            echo 'Include conf.d/httpd-wordpress.conf' >> $HTTPD_CONF_FILE
+    fi
 }
 
 test ! -d "$APP_HOME" && echo "INFO: $APP_HOME not found. creating..." && mkdir -p "$APP_HOME"
@@ -166,9 +175,6 @@ if [ ! -e "$WORDPRESS_HOME/wp-config.php" ]; then
         sed -i "s/getenv('DATABASE_HOST')/${DATABASE_HOST}/g" wp-config.php
 		cd $WORDPRESS_HOME
 		cp $WORDPRESS_SOURCE/wp-config.php .
-
-        echo "Starting local Redis ..."
-        redis-server --daemonize yes
 	fi
 else
 	echo "INFO: $WORDPRESS_HOME/wp-config.php already exists."
