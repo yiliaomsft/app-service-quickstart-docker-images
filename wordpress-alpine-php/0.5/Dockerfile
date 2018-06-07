@@ -25,6 +25,9 @@ RUN set -ex \
 	# ~. tools
 	# --------
     && apk add --update git tcpdump tcptraceroute\
+	&& cd /usr/bin \
+	&& wget http://www.vdberg.org/~richard/tcpping \
+	&& chmod 777 tcpping \
 	# --------
 	# 1. redis
 	# --------
