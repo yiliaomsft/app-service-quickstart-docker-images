@@ -66,7 +66,7 @@ setup_wordpress(){
     
 	    echo "INFO: Clone from "$GIT_REPO		
         git clone $GIT_REPO $WORDPRESS_HOME	
-	    if [ "$GIT_BTANCH" != "master" ];then
+	    if [ "$GIT_BRANCH" != "master" ];then
 		    echo "INFO: Checkout to "$GIT_BRANCH
 		    git fetch origin
 	        git branch --track $GIT_BRANCH origin/$GIT_BRANCH && git checkout $GIT_BRANCH
