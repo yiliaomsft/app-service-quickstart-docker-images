@@ -40,7 +40,7 @@ DATABASE_PASSWORD | some-string
 1. By default Xdebug is turned off as turning it on impacts performance.
 2. Connect by SSH.
 3. Go to ```/etc/php7/conf.d```,  Update ```xdebug.ini``` as wish, don't modify the path of below line.
-```zend_extension=/usr/lib/php/modules/xdebug.so```
+```zend_extension=/usr/lib/php7/modules/xdebug.so```
 4. Save ```xdebug.ini```, Restart apache by below cmd:
 ```/usr/sbin/httpd -k restart```
 5. Xdebug is turned on.
