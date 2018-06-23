@@ -2,7 +2,7 @@ version: '3.1'
 
 services:  
   wp-fpm:
-    image: leonzhang77/wordpress-mutli-container:0.1-fpm
+    image: appsvcorg/wordpress-mutli-container:0.1-fpm
     restart: always
     depends_on:      
       - redis   
@@ -29,7 +29,7 @@ services:
     restart: always
 
   nginx:
-    image: leonzhang77/nginx-mutli-container:0.1-wordpress-fpm
+    image: appsvcorg/nginx-mutli-container:0.1-wordpress-fpm
     restart: always
     depends_on:
       - wp-fpm
