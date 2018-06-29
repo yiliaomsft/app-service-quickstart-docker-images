@@ -10,16 +10,17 @@ This docker image currently contains the following components:
 2. Php-fpm (7.2.6)
 
 ## How to Deploy to Azure by portal 
-1. Go to Portal, Create a Web App for Mutli Containers
-2. Upload ready-for-deploy.yml
-3. App Setting (optional):
+1. Go to Portal, Create a Web App for Containers
+2. In the "Container Settings", select "Docker Compose (Preview)"
+3. Upload ready-for-deploy.yml in "Configuration"
+4. Go to Web App, add below App Settings (optional):
     * WORDPRESS_DB_HOST
     * WORDPRESS_DB_USER
     * WORDPRESS_DB_PASSWORD
     * WORDPRESS_DB_NAME
     * WEBSITES_ENABLE_APP_SERVICE_STORAGE = true
-3. Browse your site
-4. Complete WordPress installation  
+5. Browse your site
+6. Complete WordPress installation  
 
 ## How to Deploy to Azure by azure-cli
 - sample script ( Please modify as your conditions ):
