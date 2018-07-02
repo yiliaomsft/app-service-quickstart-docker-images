@@ -89,21 +89,6 @@ There is a tradeoff between file server stability and file persistence . Since w
 - Please Include  App Setting ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  when use built in MariaDB since we need files to be persisted.
 
 ## Change Log
-- **Version 0.5**
-  1. Add PHP redis extension.
-  2. Add common debug tools, tcpdump/tcptraceroute.
-  3. Fixed some Vulnerabilities.
-  
-- **Version 0.4**
-  1. Update version of Alpine/PHP/Apache/Mariadb.
-  2. Redis-server is running by default.
-  3. Reduce size.
-
-- **Version 0.3**
-  1. Use Git to deploy wordpress.
-  2. Update version of PHP/Apache/Mariadb/Phpmyadmin.
-  3. Add Xdebug extenstion of PHP.
-  4. Use supervisord to keep SSHD and Apache.
 
 # How to Contribute
 If you have feedback please create an issue but **do not send Pull requests** to these images since any changes to the images needs to tested before it is pushed to production. 
