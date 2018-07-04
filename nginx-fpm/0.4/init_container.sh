@@ -10,7 +10,7 @@ setup_mariadb_data_dir(){
     if [ ! -d "$MARIADB_DATA_DIR/mysql" ]; then
 	    echo "INFO: 'mysql' database doesn't exist under $MARIADB_DATA_DIR. So we think $MARIADB_DATA_DIR is empty."
 	    echo "Copying all data files from the original folder /var/lib/mysql to $MARIADB_DATA_DIR ..."
-	    cp -R --no-clobber /var/lib/mysql/. $MARIADB_DATA_DIR
+	    cp -R /var/lib/mysql/. $MARIADB_DATA_DIR
     else
 	    echo "INFO: 'mysql' database already exists under $MARIADB_DATA_DIR."
     fi
@@ -23,7 +23,8 @@ setup_mariadb_data_dir(){
 }
 
 start_mariadb(){
-    service mysql start
+    /etc/init.d/mariadb setup
+    rc-service mariadb start
 
     rm -f /tmp/mysql.sock
     ln -s /var/run/mysqld/mysqld.sock /tmp/mysql.sock
@@ -52,6 +53,8 @@ if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
     echo "INFO: NOT in Azure, chown for "$HOME_SITE  
     chown -R www-data:www-data $HOME_SITE 
 fi 
+
+echo "Setup openrc ..." && openrc && touch /run/openrc/softlevel
 
 # setup nginx log dir
 # http://nginx.org/en/docs/ngx_core_module.html#error_log
@@ -93,10 +96,11 @@ if [ "${DATABASE_TYPE}" == "local" ]; then
     setup_phpmyadmin
 fi        
 echo "Starting SSH ..."
-service ssh start
+rc-service sshd start
 
 echo "Starting php-fpm ..."
-service php7.0-fpm start
+#service php7.0-fpm start
+php-fpm -D
 chmod 777 /run/php/php7.0-fpm.sock
 
 echo "Starting Nginx ..."
@@ -104,6 +108,7 @@ mkdir -p /home/LogFiles/nginx
 if test ! -e /home/LogFiles/nginx/error.log; then 
     touch /home/LogFiles/nginx/error.log
 fi
-/usr/sbin/nginx
+/usr/sbin/nginx -g "daemon off;"
+#/usr/sbin/nginx
 
 

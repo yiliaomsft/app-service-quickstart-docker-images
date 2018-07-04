@@ -1,26 +1,17 @@
-FROM nginx
+FROM php:7.2-fpm-alpine
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
-# This is latest version, 4-17-2018
 # ========
 # ENV vars
 # ========
-
 # ssh
 ENV SSH_PASSWD "root:Docker!"
-
-# Composer
-# Updation: https://getcomposer.org/download/
-ENV COMPOSER_DOWNLOAD_URL "https://getcomposer.org/installer"
-ENV COMPOSER_ALLOW_SUPERUSER 1
-ENV COMPOSER_HOME /home/.composer
-ENV COMPOSER_VERSION "1.6.1"
-# SHA384SUM https://composer.github.io/installer.sha384sum
-ENV COMPOSER_SETUP_SHA 544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061
 #nginx
+ENV NGINX_VERSION 1.14.0
 ENV NGINX_LOG_DIR "/home/LogFiles/nginx"
 #php
-ENV PHP_HOME "/etc/php/7.0"
-ENV PHP_CONF_DIR $PHP_HOME"/cli"
+#/usr/local/etc/php/php.ini
+ENV PHP_HOME "/usr/local/etc/php"
+ENV PHP_CONF_DIR $PHP_HOME
 ENV PHP_CONF_FILE $PHP_CONF_DIR"/php.ini"
 # mariadb
 ENV MARIADB_DATA_DIR "/home/data/mysql"
@@ -30,104 +21,201 @@ ENV PHPMYADMIN_SOURCE "/usr/src/phpmyadmin"
 ENV PHPMYADMIN_HOME "/home/phpmyadmin"
 #Web Site Home
 ENV HOME_SITE "/home/site/wwwroot"
-
-#
-ENV DOCKER_BUILD_HOME "/dockerbuild"
-
-# ====================
-# Download and Install
-# ~. essentials
-# 1. php7.0-common/php7.0-fpm/php-pear/php7.0-apcu
-# 2. ssh
-# 3. drush
-# 4. composer
-# ====================
-COPY * /tmp/
-
-    # -------------
-	# ~. essentials
-	# -------------
-
+# redis
+ENV PHPREDIS_VERSION 3.1.2
+# --------
+# ~. tools
+# --------
 RUN set -ex \
-	&& essentials=" \
-		ca-certificates \
-        wget \
+  && apk update \
+  && apk add --update openssl git net-tools tcpdump tcptraceroute vim curl wget bash\
+	&& cd /usr/bin \
+	&& wget http://www.vdberg.org/~richard/tcpping \
+	&& chmod 777 tcpping
+# ========
+# install the PHP extensions we need and xdebug
+# ======== 
+RUN docker-php-source extract \
+  # && curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/$PHPREDIS_VERSION.tar.gz \
+  # && tar xfz /tmp/redis.tar.gz \
+  # && rm -r /tmp/redis.tar.gz \
+  # && mv phpredis-$PHPREDIS_VERSION /usr/src/php/ext/redis \
+  # && docker-php-ext-install redis \
+  && docker-php-ext-install mysqli \
+  && docker-php-source delete \
+  && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+  && chmod +x wp-cli.phar \
+  && mv wp-cli.phar /usr/local/bin/wp \
+  && apk add --update $PHPIZE_DEPS \
+  && pecl install xdebug-beta \
+# ------
+# ssh
+# ------
+  && apk add --update openssh-server \
+  && echo "$SSH_PASSWD" | chpasswd \  
+# ------
+# mariadb
+# ------
+  && apk add --update mariadb mariadb-client \
+#---------------
+# openrc service
+#---------------
+  && apk update && apk add openrc \
+ # can't do cgroups
+  && sed -i 's/"cgroup_add_service/" # cgroup_add_service/g' /lib/rc/sh/openrc-run.sh
+# ----------
+# Nginx
+# ----------   
+RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
+	&& CONFIG="\
+		--prefix=/etc/nginx \
+		--sbin-path=/usr/sbin/nginx \
+		--modules-path=/usr/lib/nginx/modules \
+		--conf-path=/etc/nginx/nginx.conf \
+		--error-log-path=/var/log/nginx/error.log \
+		--http-log-path=/var/log/nginx/access.log \
+		--pid-path=/var/run/nginx.pid \
+		--lock-path=/var/run/nginx.lock \
+		--http-client-body-temp-path=/var/cache/nginx/client_temp \
+		--http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+		--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+		--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+		--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+		--user=nginx \
+		--group=nginx \
+		--with-http_ssl_module \
+		--with-http_realip_module \
+		--with-http_addition_module \
+		--with-http_sub_module \
+		--with-http_dav_module \
+		--with-http_flv_module \
+		--with-http_mp4_module \
+		--with-http_gunzip_module \
+		--with-http_gzip_static_module \
+		--with-http_random_index_module \
+		--with-http_secure_link_module \
+		--with-http_stub_status_module \
+		--with-http_auth_request_module \
+		--with-http_xslt_module=dynamic \
+		--with-http_image_filter_module=dynamic \
+		--with-http_geoip_module=dynamic \
+		--with-threads \
+		--with-stream \
+		--with-stream_ssl_module \
+		--with-stream_ssl_preread_module \
+		--with-stream_realip_module \
+		--with-stream_geoip_module=dynamic \
+		--with-http_slice_module \
+		--with-mail \
+		--with-mail_ssl_module \
+		--with-compat \
+		--with-file-aio \
+		--with-http_v2_module \
+	" \
+	&& addgroup -S nginx \
+	&& adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
+	&& apk add --no-cache --virtual .build-deps \
+		gcc \
+		libc-dev \
 		make \
-	" \
-	&& apt-get update \
-	&& apt-get install -y -V --no-install-recommends $essentials \
-	&& rm -r /var/lib/apt/lists/* \
-    #
-	# ------------------
-        # 1. php7.0-common/php7.0-fpm/php-pear/php7.0-apcu
-	# ------------------
-    && phps=" \
-        php7.0-common \
-        php7.0-fpm \
-        php-pear \
-        php7.0-apcu \
-        php7.0-gd \
-        php7.0-dba \
-        php7.0-mysql \
-		php7.0-xml \
-		php7.0-dev \
-		# for phpmyadmin
-		php7.0-mbstring \
-	" \
-    && apt-get update \
-	&& apt-get install -y -V --no-install-recommends $phps \
-	&& pecl update-channels \
-	&& pecl install xdebug-beta \
-	&& rm -r /var/lib/apt/lists/* \
-    #
-    # ------
-	# 2. ssh
-	# ------
-	&& apt-get update \
-	&& apt-get install -y --no-install-recommends openssh-server \
-	&& echo "$SSH_PASSWD" | chpasswd \
-    #   
-	# ------
-	# 3. drush
-	# ------
-    && php -r "readfile('http://files.drush.org/drush.phar');" > /usr/local/bin/drush \
-    && chmod +x /usr/local/bin/drush \
-	#
-	# ------
-	# 4. composer
-	# ------    
-	&& php -r "readfile('https://getcomposer.org/installer');" > /tmp/composer-setup.php \
-       && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) === getenv('COMPOSER_SETUP_SHA')) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('/tmp/composer-setup.php'); echo PHP_EOL; exit(1); } echo PHP_EOL;" \
-   	&& mkdir -p /composer/bin \
-       && php /tmp/composer-setup.php --install-dir=/usr/local/bin/ --filename=composer --version=${COMPOSER_VERSION} \
-       && rm /tmp/composer-setup.php \
-    #
-    # ------
-	# 5. mariadb
-	# ------
-    && apt-get install -y -V --no-install-recommends mariadb-server \
-    #
-	# -------------
-	# 6. phpmyadmin
-	# -------------
-	&& mkdir -p $PHPMYADMIN_SOURCE \
-    && mv /tmp/phpMyAdmin.tar.gz $PHPMYADMIN_SOURCE/phpMyAdmin.tar.gz \
-	&& mv /tmp/phpmyadmin-nginx.conf $PHPMYADMIN_SOURCE/phpmyadmin-nginx.conf
-	
-	# ----------
-	# ~. clean up
-	# ----------
+		openssl-dev \
+		pcre-dev \
+		zlib-dev \
+		linux-headers \
+		curl \
+		gnupg \
+		libxslt-dev \
+		gd-dev \
+		geoip-dev \
+	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
+	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
+	&& export GNUPGHOME="$(mktemp -d)" \
+	&& found=''; \
+	for server in \
+		ha.pool.sks-keyservers.net \
+		hkp://keyserver.ubuntu.com:80 \
+		hkp://p80.pool.sks-keyservers.net:80 \
+		pgp.mit.edu \
+	; do \
+		echo "Fetching GPG key $GPG_KEYS from $server"; \
+		gpg --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$GPG_KEYS" && found=yes && break; \
+	done; \
+	test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
+	gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
+	&& rm -rf "$GNUPGHOME" nginx.tar.gz.asc \
+	&& mkdir -p /usr/src \
+	&& tar -zxC /usr/src -f nginx.tar.gz \
+	&& rm nginx.tar.gz \
+	&& cd /usr/src/nginx-$NGINX_VERSION \
+	&& ./configure $CONFIG --with-debug \
+	&& make -j$(getconf _NPROCESSORS_ONLN) \
+	&& mv objs/nginx objs/nginx-debug \
+	&& mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
+	&& mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
+	&& mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
+	&& mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
+	&& ./configure $CONFIG \
+	&& make -j$(getconf _NPROCESSORS_ONLN) \
+	&& make install \
+	&& rm -rf /etc/nginx/html/ \
+	&& mkdir /etc/nginx/conf.d/ \
+	&& mkdir -p /usr/share/nginx/html/ \
+	&& install -m644 html/index.html /usr/share/nginx/html/ \
+	&& install -m644 html/50x.html /usr/share/nginx/html/ \
+	&& install -m755 objs/nginx-debug /usr/sbin/nginx-debug \
+	&& install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_xslt_filter_module-debug.so \
+	&& install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
+	&& install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
+	&& install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
+	&& ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
+	&& strip /usr/sbin/nginx* \
+	&& strip /usr/lib/nginx/modules/*.so \
+	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
+	\
+	# Bring in gettext so we can get `envsubst`, then throw
+	# the rest away. To do this, we need to install `gettext`
+	# then move `envsubst` out of the way so `gettext` can
+	# be deleted completely, then move `envsubst` back.
+	&& apk add --no-cache --virtual .gettext gettext \
+	&& mv /usr/bin/envsubst /tmp/ \
+	\
+	&& runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' /usr/sbin/nginx /usr/lib/nginx/modules/*.so /tmp/envsubst \
+			| tr ',' '\n' \
+			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+	)" \
+	&& apk add --no-cache --virtual .nginx-rundeps $runDeps \
+	&& apk del .build-deps \
+	&& apk del .gettext \
+	&& mv /tmp/envsubst /usr/local/bin/ \
+	\
+	# Bring in tzdata so users could set the timezones through the environment
+	# variables
+	&& apk add --no-cache tzdata \
+	\
+	# forward request and error logs to docker log collector
+	&& ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
+# -------------
+# phpmyadmin
+# -------------
+RUN mkdir -p $PHPMYADMIN_SOURCE 
+COPY phpMyAdmin.tar.gz $PHPMYADMIN_SOURCE/phpMyAdmin.tar.gz
+# ----------
+# ~. upgrade/clean up
+# ----------
 RUN set -ex \
-	&& apt-get autoremove -y 	
-
+	&& apk update \
+	&& apk upgrade \
+	&& rm -rf /var/cache/apk/* 
 # =========
 # Configure
 # =========
-
 RUN set -ex\
-    && test ! -d /var/www && mkdir -p /var/www \
+    # && test ! -d /var/www 
+	&& mkdir -p /var/www \
 	&& chown -R www-data:www-data /var/www \	
-	##
 	##
 	&& rm -rf /var/log/mysql \
 	&& ln -s $MARIADB_LOG_DIR /var/log/mysql \
@@ -135,34 +223,30 @@ RUN set -ex\
 	&& rm -rf /var/log/nginx \
 	&& ln -s $NGINX_LOG_DIR /var/log/nginx \
 	##
-    && ln -s ${HOME_SITE} /var/www/wwwroot \
+    && ln -s ${HOME_SITE} /var/www/html \
     ##	
     && ln -s ${PHPMYADMIN_HOME} /var/www/phpmyadmin
 	
 # ssh
-COPY sshd_config /etc/ssh/
- 
+COPY sshd_config /etc/ssh/ 
 # php
-COPY php.ini /etc/php/7.0/fpm/php.ini
-COPY xdebug.ini /etc/php/7.0/fpm/conf.d/xdebug.ini
-COPY www.conf /etc/php/7.0/fpm/pool.d/www.conf
-
+COPY php.ini /usr/local/etc/php/php.ini
+COPY xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+COPY www.conf /usr/local/etc/php/conf.d/www.conf
 # nginx
 COPY nginx.conf /etc/nginx/nginx.conf
+#COPY default.conf /etc/nginx/conf.d/default.conf
 COPY hostingstart.html /home/site/wwwroot/index.html
-
 # phpmyadmin
 COPY phpmyadmin-config.inc.php $PHPMYADMIN_SOURCE/
 COPY mariadb.cnf /etc/mysql/
-
+COPY phpmyadmin-nginx.conf $PHPMYADMIN_SOURCE/phpmyadmin-nginx.conf
 RUN \
    echo "<?php phpinfo();" > /home/site/wwwroot/index.php 
-
 # =====
 # final
 # =====
 COPY init_container.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init_container.sh
-
 EXPOSE 2222 80
 ENTRYPOINT ["init_container.sh"]
