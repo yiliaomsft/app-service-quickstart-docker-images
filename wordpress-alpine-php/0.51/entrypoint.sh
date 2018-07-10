@@ -70,11 +70,7 @@ setup_wordpress(){
 		    echo "INFO: Checkout to "$GIT_BRANCH
 		    git fetch origin
 	        git branch --track $GIT_BRANCH origin/$GIT_BRANCH && git checkout $GIT_BRANCH
-	    fi	
-        # The wp-config.php is designed for default GIT/BRANCH, remove it if need.
-        if [ "${DATABASE_TYPE}" != "local" -a "${GIT_REPO}" == "https://github.com/azureappserviceoss/wordpress-azure" -a "${GIT_BRANCH}" == "linux-appservice" ];then
-           rm wp-config.php
-        fi
+	    fi	        
     else
         echo "INFO: There is one wordpress exist, no need to GIT pull again."
     fi
