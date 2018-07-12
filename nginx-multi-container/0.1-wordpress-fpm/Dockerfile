@@ -1,6 +1,5 @@
 FROM nginx:stable-alpine
 MAINTAINER Azure App Service Container Images <appsvc-images@microsoft.com>
-# Wrong spelling, will be remove soon.
 #---------------
 # tools
 #---------------
