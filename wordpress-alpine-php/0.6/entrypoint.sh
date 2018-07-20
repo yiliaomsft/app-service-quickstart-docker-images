@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #set -e
 setup_mariadb_data_dir(){
@@ -6,11 +6,11 @@ setup_mariadb_data_dir(){
 
     # check if 'mysql' database exists
     if [ ! -d "$MARIADB_DATA_DIR/mysql" ]; then
-	echo "INFO: 'mysql' database doesn't exist under $MARIADB_DATA_DIR. So we think $MARIADB_DATA_DIR is empty."
-	echo "Copying all data files from the original folder /var/lib/mysql to $MARIADB_DATA_DIR ..."
-	cp -R /var/lib/mysql/. $MARIADB_DATA_DIR
+	    echo "INFO: 'mysql' database doesn't exist under $MARIADB_DATA_DIR. So we think $MARIADB_DATA_DIR is empty."
+	    echo "Copying all data files from the original folder /var/lib/mysql to $MARIADB_DATA_DIR ..."
+	    cp -R /var/lib/mysql/. $MARIADB_DATA_DIR
     else
-	echo "INFO: 'mysql' database already exists under $MARIADB_DATA_DIR."
+	    echo "INFO: 'mysql' database already exists under $MARIADB_DATA_DIR."
     fi
 
     rm -rf /var/lib/mysql
@@ -21,8 +21,7 @@ setup_mariadb_data_dir(){
 }
 
 start_mariadb(){
-    # /etc/init.d/mariadb setup
-    /usr/bin/mysql_install_db --user=mysql --datadir=${MARIADB_DATA_DIR}
+    /etc/init.d/mariadb setup
     rc-service mariadb start 
 
     rm -f /tmp/mysql.sock
@@ -36,20 +35,16 @@ start_mariadb(){
 setup_phpmyadmin(){
     test ! -d "$PHPMYADMIN_HOME" && echo "INFO: $PHPMYADMIN_HOME not found. creating..." && mkdir -p "$PHPMYADMIN_HOME"
     cd $PHPMYADMIN_SOURCE
-    tar -xf phpmyadmin.tar.gz -C $PHPMYADMIN_HOME --strip-components=1
-    cp -R phpmyadmin-config.inc.php $PHPMYADMIN_HOME/config.inc.php
+    tar -xf phpMyAdmin.tar.gz -C $PHPMYADMIN_HOME --strip-components=1
+    cp -R phpmyadmin-config.inc.php $PHPMYADMIN_HOME/config.inc.php    
+    cp -R phpmyadmin-default.conf /etc/nginx/conf.d/default.conf
+	cd /
     rm -rf $PHPMYADMIN_SOURCE
     if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
         echo "INFO: NOT in Azure, chown for "$PHPMYADMIN_HOME  
         chown -R www-data:www-data $PHPMYADMIN_HOME
     fi 
 }    
-
-load_phpmyadmin(){
-        if ! grep -q "^Include conf.d/httpd-phpmyadmin.conf" $HTTPD_CONF_FILE; then
-                echo 'Include conf.d/httpd-phpmyadmin.conf' >> $HTTPD_CONF_FILE
-        fi
-}
 
 setup_wordpress(){
 	test ! -d "$WORDPRESS_HOME" && echo "INFO: $WORDPRESS_HOME not found. creating ..." && mkdir -p "$WORDPRESS_HOME"
@@ -89,25 +84,24 @@ update_wordpress_config(){
 	DATABASE_PASSWORD=${DATABASE_PASSWORD:-MS173m_QN}   
 }
 
-load_wordpress(){
-    if ! grep -q "^Include conf.d/httpd-wordpress.conf" $HTTPD_CONF_FILE; then
-            echo 'Include conf.d/httpd-wordpress.conf' >> $HTTPD_CONF_FILE
-    fi
-}
-
-test ! -d "$APP_HOME" && echo "INFO: $APP_HOME not found. creating..." && mkdir -p "$APP_HOME"
+# setup server root
+test ! -d "$WORDPRESS_HOME" && echo "INFO: $WORDPRESS_HOME not found. creating..." && mkdir -p "$WORDPRESS_HOME"
 if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then 
-    echo "INFO: NOT in Azure, chown for "$APP_HOME 
-    chown -R www-data:www-data $APP_HOME
-fi
-
-test ! -d "$HTTPD_LOG_DIR" && echo "INFO: $HTTPD_LOG_DIR not found. creating..." && mkdir -p "$HTTPD_LOG_DIR"
-if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then 
-    echo "INFO: NOT in Azure, chown for "$HTTPD_LOG_DIR 
-    chown -R www-data:www-data $HTTPD_LOG_DIR
+    echo "INFO: NOT in Azure, chown for "$WORDPRESS_HOME 
+    chown -R www-data:www-data $WORDPRESS_HOME
 fi
 
 echo "Setup openrc ..." && openrc && touch /run/openrc/softlevel
+
+echo "INFO: creating /run/php/php7.0-fpm.sock ..."
+test -e /run/php/php7.0-fpm.sock && rm -f /run/php/php7.0-fpm.sock
+mkdir -p /run/php
+touch /run/php/php7.0-fpm.sock
+if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
+    echo "INFO: NOT in Azure, chown for /run/php/php7.0-fpm.sock"  
+    chown -R www-data:www-data /run/php/php7.0-fpm.sock 
+fi 
+chmod 777 /run/php/php7.0-fpm.sock
 
 DATABASE_TYPE=$(echo ${DATABASE_TYPE}|tr '[A-Z]' '[a-z]')
 
@@ -177,16 +171,21 @@ else
 	echo "INFO: You can modify it manually as need."
 fi	
 
-echo "Loading WordPress conf ..."
-load_wordpress
-rm -rf $WORDPRESS_SOURCE
 
 echo "Starting Redis ..."
 redis-server &
-echo "Starting SSH ..."
-echo "Starting Apache httpd -D FOREGROUND ..."
 
-test ! -d "$HTTPD_PID_DIR" && echo "INFO: $HTTPD_PID_DIR not found. creating ..." && mkdir -p "$HTTPD_PID_DIR"
-test ! -d "$SUPERVISOR_LOG_DIR" && echo "INFO: $SUPERVISOR_LOG_DIR not found. creating ..." && mkdir -p "$SUPERVISOR_LOG_DIR"
-cd /usr/bin/
-supervisord -c /etc/supervisord.conf
+echo "Starting SSH ..."
+rc-service sshd start
+
+echo "Starting php-fpm ..."
+php-fpm -D
+chmod 777 /run/php/php7.0-fpm.sock
+
+echo "Starting Nginx ..."
+mkdir -p /home/LogFiles/nginx
+if test ! -e /home/LogFiles/nginx/error.log; then 
+    touch /home/LogFiles/nginx/error.log
+fi
+/usr/sbin/nginx -g "daemon off;"
+
