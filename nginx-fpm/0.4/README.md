@@ -60,6 +60,7 @@ php-fpm -D
   1. Change base image to alpine:3.7, reduce size.
   2. Update version of nginx to 1.14.0.
   3. Update version of php to 7.2.7.
+  4. Update the conf of php-fpm, pass env parameters to php codes.
 - **Version 0.3** 
   1. Add Xdebug.
   2. Update version of nginx to 1.13.11.
