@@ -23,7 +23,8 @@ setup_mariadb_data_dir(){
 }
 
 start_mariadb(){
-    service mysql start
+    /etc/init.d/mariadb setup
+    rc-service mariadb start
 
     rm -f /tmp/mysql.sock
     ln -s /var/run/mysqld/mysqld.sock /tmp/mysql.sock
@@ -31,19 +32,21 @@ start_mariadb(){
     # create default database 'azurelocaldb'
     mysql -u root -e "CREATE DATABASE IF NOT EXISTS azurelocaldb; FLUSH PRIVILEGES;"
 }
+
 #unzip phpmyadmin
 setup_phpmyadmin(){
     test ! -d "$PHPMYADMIN_HOME" && echo "INFO: $PHPMYADMIN_HOME not found. creating..." && mkdir -p "$PHPMYADMIN_HOME"
     cd $PHPMYADMIN_SOURCE
-    tar -xf phpMyAdmin.tar.gz -C $PHPMYADMIN_HOME/ --strip-components=1    
-	cp -R phpmyadmin-nginx.conf /etc/nginx/nginx.conf
-	cd /
+    tar -xf phpMyAdmin.tar.gz -C $PHPMYADMIN_HOME/ --strip-components=1 
+    cp -R phpmyadmin-default.conf /etc/nginx/conf.d/default.conf   
+    cd /
     rm -rf $PHPMYADMIN_SOURCE
 	if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then
         echo "INFO: NOT in Azure, chown for "$PHPMYADMIN_HOME  
         chown -R www-data:www-data $PHPMYADMIN_HOME
 	fi
 }
+
 #Get drupal from Git
 setup_drupal(){    
     cd $DRUPAL_HOME
@@ -69,12 +72,20 @@ setup_drupal(){
         #Test this time, after git pull, myabe drupal has already installed in repo.
         cp "$DRUPAL_HOME/sites/default/default.settings.php" "$DRUPAL_HOME/sites/default/settings.php"
         chmod a+w "$DRUPAL_HOME/sites/default/settings.php"
-	fi
+	fi   
 }
 
 # setup nginx log dir
 # http://nginx.org/en/docs/ngx_core_module.html#error_log
 # sed -i "s|error_log /var/log/error.log;|error_log stderr;|g" /etc/nginx/nginx.conf
+
+test ! -d "$DRUPAL_HOME" && echo "INFO: $DRUPAL_HOME not found. creating..." && mkdir -p "$DRUPAL_HOME"
+if [ ! $WEBSITES_ENABLE_APP_SERVICE_STORAGE ]; then 
+    echo "INFO: NOT in Azure, chown for "$DRUPAL_HOME 
+    chown -R www-data:www-data $DRUPAL_HOME
+fi
+
+echo "Setup openrc ..." && openrc && touch /run/openrc/softlevel
 
 echo "INFO: creating /run/php/php7.0-fpm.sock ..."
 test -e /run/php/php7.0-fpm.sock && rm -f /run/php/php7.0-fpm.sock
@@ -130,10 +141,10 @@ fi
 cd $DRUPAL_HOME
        
 echo "Starting SSH ..."
-service ssh start
+rc-service sshd start
 
 echo "Starting php-fpm ..."
-service php7.0-fpm start
+php-fpm -D
 chmod 777 /run/php/php7.0-fpm.sock
 
 echo "Starting Nginx ..."
@@ -141,6 +152,6 @@ mkdir -p /home/LogFiles/nginx
 if test ! -e /home/LogFiles/nginx/error.log; then 
     touch /home/LogFiles/nginx/error.log
 fi
-/usr/sbin/nginx
+/usr/sbin/nginx -g "daemon off;"
 
 

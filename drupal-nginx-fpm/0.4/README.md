@@ -9,15 +9,15 @@ You can find it in Docker hub here [https://hub.docker.com/r/appsvcorg/drupal-ng
 # Components
 This docker image currently contains the following components:
 1. Drupal (Git pull as you wish)
-2. nginx (1.13.11)
-3. PHP (7.0.27)
+2. nginx (1.14.0)
+3. PHP (7.2.7)
 4. Drush
 5. Composer (1.6.1)
 6. MariaDB ( 10.1.26/if using Local Database )
 7. Phpmyadmin ( 4.8.0/if using Local Database )
 
 ## How to Deploy to Azure 
-1. Create a Web App for Containers, set Docker container as ```appsvcorg/drupal-nginx-fpm:0.3``` 
+1. Create a Web App for Containers, set Docker container as ```appsvcorg/drupal-nginx-fpm:0.4``` 
    OR: Create a Drupal on Linux Web App With MySQL.
 2. Add one App Setting ```WEBSITES_CONTAINER_START_TIME_LIMIT``` = 600
 3. Browse your site and wait almost 10 mins, you will see install page of Drupal.
@@ -59,11 +59,16 @@ DATABASE_PASSWORD | some-string
 # How to turn on Xdebug to profile the app
 1. By default Xdebug is turned off as turning it on impacts performance.
 2. Connect by SSH.
-3. Go to ```/etc/php/7.0/fpm/conf.d```,  Update ```xdebug.ini``` as wish, don't modify the path of below line.
-```zend_extension=/usr/local/php/lib/php/20151012/xdebug.so```
+3. Go to ```/usr/local/etc/php/conf.d```,  Update ```xdebug.ini``` as wish, don't modify the path of below line.
+```zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so```
 4. Save ```xdebug.ini```, Restart php-fpm by below cmd:
 ```
-service php7.0-fpm restart
+# find gid of php-fpm
+ps aux
+# Kill master process of php-fpm
+kill -INT <gid>
+# start php-fpm again
+php-fpm -D
 chmod 777 /run/php/php7.0-fpm.sock
 ```
 5. Xdebug is turned on.
@@ -93,6 +98,11 @@ You can update ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  to enable app s
 - Deploy to Azure, Pull and run this image need some time, You can include App Setting ```WEBSITES_CONTAINER_START_TIME_LIMIT``` to specify the time in seconds as need, Default is 240 and max is 600.
 
 ## Change Log 
+- **Version 0.4**
+  1. Base image to alpine, reduce size.
+  2. Update version of nginx and php-fpm.
+  3. Update conf files of php-fpm, pass env parameters by default.
+  4. Update conf files of nignx.   
 - **Version 0.31**
   1. Install some common debug tools, netstat, tcpping, tcpdump.
 - **Version 0.3**
