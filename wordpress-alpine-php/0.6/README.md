@@ -5,11 +5,10 @@ This is a WordPress Docker image which can run on both [Azure Web App on Linux](
 This docker image currently contains the following components:
 
 1. WordPress
-2. Alpine (3.7)
-3. PHP (7.1.7)
-4. Apache/Httpd (2.4.33)
-5. MariaDB ( 10.1.32/if using Local Database )
-6. Phpmyadmin ( 4.8.0/if using Local Database )
+2. Nginx(1.14.0)
+3. PHP (7.2.7)
+4. MariaDB ( 10.1.26/if using Local Database )
+5. Phpmyadmin ( 4.8.0/if using Local Database )
 
 ## How to configure to use Azure Database for MySQL with web app 
 1. Create a Web App for Containers
@@ -90,6 +89,10 @@ There is a tradeoff between file server stability and file persistence . Since w
 - Please Include  App Setting ```WEBSITES_ENABLE_APP_SERVICE_STORAGE``` = true  when use built in MariaDB since we need files to be persisted.
 
 ## Change Log
+- **Version 0.6**
+  1. Change to Nignx+fpm.
+  2. Update version of php to 7.2.7.  
+
 - **Version 0.51**
   1. Add PHP simleXML module.
   2. Bind php 7.1.7, avoid confuse of different php versions.  
